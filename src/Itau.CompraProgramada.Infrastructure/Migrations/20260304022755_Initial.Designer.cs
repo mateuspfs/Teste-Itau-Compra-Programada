@@ -11,9 +11,9 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace Itau.CompraProgramada.Infrastructure.Migrations
 {
-    [DbContext(typeof(CompraProgramadaDbContext))]
-    [Migration("20260303033149_InitialMigration")]
-    partial class InitialMigration
+    [DbContext(typeof(ApplicationDbContext))]
+    [Migration("20260304022755_Initial")]
+    partial class Initial
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -44,7 +44,8 @@ namespace Itau.CompraProgramada.Infrastructure.Migrations
 
                     b.Property<string>("Nome")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
 
                     b.HasKey("Id");
 
@@ -64,7 +65,8 @@ namespace Itau.CompraProgramada.Infrastructure.Migrations
 
                     b.Property<string>("CPF")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasMaxLength(11)
+                        .HasColumnType("varchar(11)");
 
                     b.Property<DateTime>("DataAdesao")
                         .HasColumnType("datetime(6)");
@@ -74,14 +76,17 @@ namespace Itau.CompraProgramada.Infrastructure.Migrations
 
                     b.Property<string>("Email")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
 
                     b.Property<string>("Nome")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasMaxLength(200)
+                        .HasColumnType("varchar(200)");
 
                     b.Property<decimal>("ValorMensal")
-                        .HasColumnType("decimal(65,30)");
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)");
 
                     b.HasKey("Id");
 
@@ -104,7 +109,8 @@ namespace Itau.CompraProgramada.Infrastructure.Migrations
 
                     b.Property<string>("NumeroConta")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
 
                     b.Property<int>("Tipo")
                         .HasColumnType("int");
@@ -131,20 +137,25 @@ namespace Itau.CompraProgramada.Infrastructure.Migrations
                         .HasColumnType("datetime(6)");
 
                     b.Property<decimal>("PrecoAbertura")
-                        .HasColumnType("decimal(65,30)");
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)");
 
                     b.Property<decimal>("PrecoFechamento")
-                        .HasColumnType("decimal(65,30)");
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)");
 
                     b.Property<decimal>("PrecoMaximo")
-                        .HasColumnType("decimal(65,30)");
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)");
 
                     b.Property<decimal>("PrecoMinimo")
-                        .HasColumnType("decimal(65,30)");
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)");
 
                     b.Property<string>("Ticker")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasMaxLength(12)
+                        .HasColumnType("varchar(12)");
 
                     b.HasKey("Id");
 
@@ -169,14 +180,16 @@ namespace Itau.CompraProgramada.Infrastructure.Migrations
                         .HasColumnType("datetime(6)");
 
                     b.Property<decimal>("PrecoMedio")
-                        .HasColumnType("decimal(65,30)");
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)");
 
                     b.Property<int>("Quantidade")
                         .HasColumnType("int");
 
                     b.Property<string>("Ticker")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasMaxLength(12)
+                        .HasColumnType("varchar(12)");
 
                     b.HasKey("Id");
 
@@ -206,14 +219,16 @@ namespace Itau.CompraProgramada.Infrastructure.Migrations
                         .HasColumnType("bigint");
 
                     b.Property<decimal>("PrecoUnitario")
-                        .HasColumnType("decimal(65,30)");
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)");
 
                     b.Property<int>("Quantidade")
                         .HasColumnType("int");
 
                     b.Property<string>("Ticker")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasMaxLength(12)
+                        .HasColumnType("varchar(12)");
 
                     b.HasKey("Id");
 
@@ -248,10 +263,12 @@ namespace Itau.CompraProgramada.Infrastructure.Migrations
                         .HasColumnType("int");
 
                     b.Property<decimal>("ValorBase")
-                        .HasColumnType("decimal(65,30)");
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)");
 
                     b.Property<decimal>("ValorIR")
-                        .HasColumnType("decimal(65,30)");
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)");
 
                     b.HasKey("Id");
 
@@ -275,17 +292,51 @@ namespace Itau.CompraProgramada.Infrastructure.Migrations
                         .HasColumnType("datetime(6)");
 
                     b.Property<decimal>("Percentual")
-                        .HasColumnType("decimal(65,30)");
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)");
 
                     b.Property<string>("Ticker")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasMaxLength(12)
+                        .HasColumnType("varchar(12)");
 
                     b.HasKey("Id");
 
                     b.HasIndex("CestaId");
 
                     b.ToTable("ItensCesta", (string)null);
+                });
+
+            modelBuilder.Entity("Itau.CompraProgramada.Domain.Entities.Log", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<DateTime>("DataCriacao")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("Excecao")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("Mensagem")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("Nivel")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
+
+                    b.Property<string>("Origem")
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Logs", (string)null);
                 });
 
             modelBuilder.Entity("Itau.CompraProgramada.Domain.Entities.OrdemCompra", b =>
@@ -306,14 +357,16 @@ namespace Itau.CompraProgramada.Infrastructure.Migrations
                         .HasColumnType("datetime(6)");
 
                     b.Property<decimal>("PrecoUnitario")
-                        .HasColumnType("decimal(65,30)");
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)");
 
                     b.Property<int>("Quantidade")
                         .HasColumnType("int");
 
                     b.Property<string>("Ticker")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasMaxLength(12)
+                        .HasColumnType("varchar(12)");
 
                     b.Property<int>("TipoMercado")
                         .HasColumnType("int");
@@ -342,17 +395,20 @@ namespace Itau.CompraProgramada.Infrastructure.Migrations
 
                     b.Property<string>("TickerComprado")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasMaxLength(12)
+                        .HasColumnType("varchar(12)");
 
                     b.Property<string>("TickerVendido")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasMaxLength(12)
+                        .HasColumnType("varchar(12)");
 
                     b.Property<int>("Tipo")
                         .HasColumnType("int");
 
                     b.Property<decimal>("ValorVenda")
-                        .HasColumnType("decimal(65,30)");
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)");
 
                     b.HasKey("Id");
 

@@ -1,44 +1,50 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Itau.CompraProgramada.Domain.Entities;
 using Itau.CompraProgramada.Domain.Interfaces.Generic;
 using Itau.CompraProgramada.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 
 namespace Itau.CompraProgramada.Infrastructure.Repositories.Generic
 {
-    public class GenericRepository<TEntity>(CompraProgramadaDbContext db) : IGenericRepository<TEntity> where TEntity : class
+    public class GenericRepository<T>(ApplicationDbContext context) : IGenericRepository<T> where T : Entity
     {
-        protected readonly CompraProgramadaDbContext Db = db;
-        protected readonly DbSet<TEntity> DbSet = db.Set<TEntity>();
+        protected readonly ApplicationDbContext _context = context;
+        protected readonly DbSet<T> _dbSet = context.Set<T>();
 
-        public virtual async Task<TEntity> GetByIdAsync(long id)
+        public virtual async Task<T?> GetByIdAsync(long id)
         {
-            return await DbSet.FindAsync(id);
+            return await _dbSet.FindAsync(id);
         }
 
-        public virtual async Task<IEnumerable<TEntity>> GetAllAsync()
+        public virtual async Task<IEnumerable<T>> GetAllAsync()
         {
-            return await DbSet.ToListAsync();
+            return await _dbSet.ToListAsync();
         }
 
-        public virtual async Task AddAsync(TEntity entity)
+        public virtual async Task AddAsync(T entity)
         {
-            await DbSet.AddAsync(entity);
+            await _dbSet.AddAsync(entity);
         }
 
-        public virtual void Update(TEntity entity)
+        public virtual async Task AddRangeAsync(IEnumerable<T> entities)
         {
-            DbSet.Update(entity);
+            await _dbSet.AddRangeAsync(entities);
         }
 
-        public virtual void Remove(TEntity entity)
+        public virtual void Update(T entity)
         {
-            DbSet.Remove(entity);
+            _dbSet.Update(entity);
+        }
+
+        public virtual void Remove(T entity)
+        {
+            _dbSet.Remove(entity);
         }
 
         public async Task<int> SaveChangesAsync()
         {
-            return await Db.SaveChangesAsync();
+            return await _context.SaveChangesAsync();
         }
     }
 }

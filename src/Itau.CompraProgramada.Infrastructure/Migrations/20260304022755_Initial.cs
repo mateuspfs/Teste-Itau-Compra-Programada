@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Itau.CompraProgramada.Infrastructure.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialMigration : Migration
+    public partial class Initial : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -21,7 +21,7 @@ namespace Itau.CompraProgramada.Infrastructure.Migrations
                 {
                     Id = table.Column<long>(type: "bigint", nullable: false)
                         .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
-                    Nome = table.Column<string>(type: "longtext", nullable: false)
+                    Nome = table.Column<string>(type: "varchar(100)", maxLength: 100, nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     Ativa = table.Column<bool>(type: "tinyint(1)", nullable: false),
                     DataCriacao = table.Column<DateTime>(type: "datetime(6)", nullable: false),
@@ -39,13 +39,13 @@ namespace Itau.CompraProgramada.Infrastructure.Migrations
                 {
                     Id = table.Column<long>(type: "bigint", nullable: false)
                         .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
-                    Nome = table.Column<string>(type: "longtext", nullable: false)
+                    Nome = table.Column<string>(type: "varchar(200)", maxLength: 200, nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
-                    CPF = table.Column<string>(type: "longtext", nullable: false)
+                    CPF = table.Column<string>(type: "varchar(11)", maxLength: 11, nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
-                    Email = table.Column<string>(type: "longtext", nullable: false)
+                    Email = table.Column<string>(type: "varchar(100)", maxLength: 100, nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
-                    ValorMensal = table.Column<decimal>(type: "decimal(65,30)", nullable: false),
+                    ValorMensal = table.Column<decimal>(type: "decimal(18,4)", precision: 18, scale: 4, nullable: false),
                     Ativo = table.Column<bool>(type: "tinyint(1)", nullable: false),
                     DataAdesao = table.Column<DateTime>(type: "datetime(6)", nullable: false),
                     DataCriacao = table.Column<DateTime>(type: "datetime(6)", nullable: false)
@@ -63,17 +63,39 @@ namespace Itau.CompraProgramada.Infrastructure.Migrations
                     Id = table.Column<long>(type: "bigint", nullable: false)
                         .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
                     DataPregao = table.Column<DateTime>(type: "datetime(6)", nullable: false),
-                    Ticker = table.Column<string>(type: "longtext", nullable: false)
+                    Ticker = table.Column<string>(type: "varchar(12)", maxLength: 12, nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
-                    PrecoAbertura = table.Column<decimal>(type: "decimal(65,30)", nullable: false),
-                    PrecoFechamento = table.Column<decimal>(type: "decimal(65,30)", nullable: false),
-                    PrecoMaximo = table.Column<decimal>(type: "decimal(65,30)", nullable: false),
-                    PrecoMinimo = table.Column<decimal>(type: "decimal(65,30)", nullable: false),
+                    PrecoAbertura = table.Column<decimal>(type: "decimal(18,4)", precision: 18, scale: 4, nullable: false),
+                    PrecoFechamento = table.Column<decimal>(type: "decimal(18,4)", precision: 18, scale: 4, nullable: false),
+                    PrecoMaximo = table.Column<decimal>(type: "decimal(18,4)", precision: 18, scale: 4, nullable: false),
+                    PrecoMinimo = table.Column<decimal>(type: "decimal(18,4)", precision: 18, scale: 4, nullable: false),
                     DataCriacao = table.Column<DateTime>(type: "datetime(6)", nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Cotacoes", x => x.Id);
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "Logs",
+                columns: table => new
+                {
+                    Id = table.Column<long>(type: "bigint", nullable: false)
+                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
+                    Nivel = table.Column<string>(type: "varchar(20)", maxLength: 20, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    Mensagem = table.Column<string>(type: "longtext", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    Excecao = table.Column<string>(type: "longtext", nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    Origem = table.Column<string>(type: "varchar(100)", maxLength: 100, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    DataCriacao = table.Column<DateTime>(type: "datetime(6)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Logs", x => x.Id);
                 })
                 .Annotation("MySql:CharSet", "utf8mb4");
 
@@ -84,10 +106,10 @@ namespace Itau.CompraProgramada.Infrastructure.Migrations
                     Id = table.Column<long>(type: "bigint", nullable: false)
                         .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
                     ContaMasterId = table.Column<long>(type: "bigint", nullable: false),
-                    Ticker = table.Column<string>(type: "longtext", nullable: false)
+                    Ticker = table.Column<string>(type: "varchar(12)", maxLength: 12, nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     Quantidade = table.Column<int>(type: "int", nullable: false),
-                    PrecoUnitario = table.Column<decimal>(type: "decimal(65,30)", nullable: false),
+                    PrecoUnitario = table.Column<decimal>(type: "decimal(18,4)", precision: 18, scale: 4, nullable: false),
                     TipoMercado = table.Column<int>(type: "int", nullable: false),
                     DataExecucao = table.Column<DateTime>(type: "datetime(6)", nullable: false),
                     DataCriacao = table.Column<DateTime>(type: "datetime(6)", nullable: false)
@@ -105,9 +127,9 @@ namespace Itau.CompraProgramada.Infrastructure.Migrations
                     Id = table.Column<long>(type: "bigint", nullable: false)
                         .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
                     CestaId = table.Column<long>(type: "bigint", nullable: false),
-                    Ticker = table.Column<string>(type: "longtext", nullable: false)
+                    Ticker = table.Column<string>(type: "varchar(12)", maxLength: 12, nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
-                    Percentual = table.Column<decimal>(type: "decimal(65,30)", nullable: false),
+                    Percentual = table.Column<decimal>(type: "decimal(18,4)", precision: 18, scale: 4, nullable: false),
                     DataCriacao = table.Column<DateTime>(type: "datetime(6)", nullable: false)
                 },
                 constraints: table =>
@@ -129,7 +151,7 @@ namespace Itau.CompraProgramada.Infrastructure.Migrations
                     Id = table.Column<long>(type: "bigint", nullable: false)
                         .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
                     ClienteId = table.Column<long>(type: "bigint", nullable: false),
-                    NumeroConta = table.Column<string>(type: "longtext", nullable: false)
+                    NumeroConta = table.Column<string>(type: "varchar(20)", maxLength: 20, nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     Tipo = table.Column<int>(type: "int", nullable: false),
                     DataCriacao = table.Column<DateTime>(type: "datetime(6)", nullable: false)
@@ -154,8 +176,8 @@ namespace Itau.CompraProgramada.Infrastructure.Migrations
                         .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
                     ClienteId = table.Column<long>(type: "bigint", nullable: false),
                     Tipo = table.Column<int>(type: "int", nullable: false),
-                    ValorBase = table.Column<decimal>(type: "decimal(65,30)", nullable: false),
-                    ValorIR = table.Column<decimal>(type: "decimal(65,30)", nullable: false),
+                    ValorBase = table.Column<decimal>(type: "decimal(18,4)", precision: 18, scale: 4, nullable: false),
+                    ValorIR = table.Column<decimal>(type: "decimal(18,4)", precision: 18, scale: 4, nullable: false),
                     PublicadoKafka = table.Column<bool>(type: "tinyint(1)", nullable: false),
                     DataEvento = table.Column<DateTime>(type: "datetime(6)", nullable: false),
                     DataCriacao = table.Column<DateTime>(type: "datetime(6)", nullable: false)
@@ -180,11 +202,11 @@ namespace Itau.CompraProgramada.Infrastructure.Migrations
                         .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
                     ClienteId = table.Column<long>(type: "bigint", nullable: false),
                     Tipo = table.Column<int>(type: "int", nullable: false),
-                    TickerVendido = table.Column<string>(type: "longtext", nullable: false)
+                    TickerVendido = table.Column<string>(type: "varchar(12)", maxLength: 12, nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
-                    TickerComprado = table.Column<string>(type: "longtext", nullable: false)
+                    TickerComprado = table.Column<string>(type: "varchar(12)", maxLength: 12, nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
-                    ValorVenda = table.Column<decimal>(type: "decimal(65,30)", nullable: false),
+                    ValorVenda = table.Column<decimal>(type: "decimal(18,4)", precision: 18, scale: 4, nullable: false),
                     DataRebalanceamento = table.Column<DateTime>(type: "datetime(6)", nullable: false),
                     DataCriacao = table.Column<DateTime>(type: "datetime(6)", nullable: false)
                 },
@@ -207,10 +229,10 @@ namespace Itau.CompraProgramada.Infrastructure.Migrations
                     Id = table.Column<long>(type: "bigint", nullable: false)
                         .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
                     ContaGraficaId = table.Column<long>(type: "bigint", nullable: false),
-                    Ticker = table.Column<string>(type: "longtext", nullable: false)
+                    Ticker = table.Column<string>(type: "varchar(12)", maxLength: 12, nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     Quantidade = table.Column<int>(type: "int", nullable: false),
-                    PrecoMedio = table.Column<decimal>(type: "decimal(65,30)", nullable: false),
+                    PrecoMedio = table.Column<decimal>(type: "decimal(18,4)", precision: 18, scale: 4, nullable: false),
                     DataUltimaAtualizacao = table.Column<DateTime>(type: "datetime(6)", nullable: false),
                     DataCriacao = table.Column<DateTime>(type: "datetime(6)", nullable: false)
                 },
@@ -234,10 +256,10 @@ namespace Itau.CompraProgramada.Infrastructure.Migrations
                         .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
                     OrdemCompraId = table.Column<long>(type: "bigint", nullable: false),
                     CustodiaFilhoteId = table.Column<long>(type: "bigint", nullable: false),
-                    Ticker = table.Column<string>(type: "longtext", nullable: false)
+                    Ticker = table.Column<string>(type: "varchar(12)", maxLength: 12, nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     Quantidade = table.Column<int>(type: "int", nullable: false),
-                    PrecoUnitario = table.Column<decimal>(type: "decimal(65,30)", nullable: false),
+                    PrecoUnitario = table.Column<decimal>(type: "decimal(18,4)", precision: 18, scale: 4, nullable: false),
                     DataDistribuicao = table.Column<DateTime>(type: "datetime(6)", nullable: false),
                     DataCriacao = table.Column<DateTime>(type: "datetime(6)", nullable: false)
                 },
@@ -309,6 +331,9 @@ namespace Itau.CompraProgramada.Infrastructure.Migrations
 
             migrationBuilder.DropTable(
                 name: "ItensCesta");
+
+            migrationBuilder.DropTable(
+                name: "Logs");
 
             migrationBuilder.DropTable(
                 name: "Rebalanceamentos");

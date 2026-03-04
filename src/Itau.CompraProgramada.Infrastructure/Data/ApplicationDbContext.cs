@@ -1,12 +1,11 @@
 using Itau.CompraProgramada.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
+using System.Reflection;
 
 namespace Itau.CompraProgramada.Infrastructure.Data
 {
-    public class CompraProgramadaDbContext : DbContext
+    public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : DbContext(options)
     {
-        public CompraProgramadaDbContext(DbContextOptions<CompraProgramadaDbContext> options) : base(options) { }
-
         public DbSet<Cliente> Clientes { get; set; }
         public DbSet<ContaGrafica> ContasGraficas { get; set; }
         public DbSet<Custodia> Custodias { get; set; }
@@ -17,20 +16,12 @@ namespace Itau.CompraProgramada.Infrastructure.Data
         public DbSet<EventoIR> EventosIR { get; set; }
         public DbSet<Cotacao> Cotacoes { get; set; }
         public DbSet<Rebalanceamento> Rebalanceamentos { get; set; }
+        public DbSet<Log> Logs { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
-            modelBuilder.Entity<Cliente>().ToTable("Clientes");
-            modelBuilder.Entity<ContaGrafica>().ToTable("ContasGraficas");
-            modelBuilder.Entity<Custodia>().ToTable("Custodias");
-            modelBuilder.Entity<CestaRecomendacao>().ToTable("CestasRecomendacao");
-            modelBuilder.Entity<ItemCesta>().ToTable("ItensCesta");
-            modelBuilder.Entity<OrdemCompra>().ToTable("OrdensCompra");
-            modelBuilder.Entity<Distribuicao>().ToTable("Distribuicoes");
-            modelBuilder.Entity<EventoIR>().ToTable("EventosIR");
-            modelBuilder.Entity<Cotacao>().ToTable("Cotacoes");
-            modelBuilder.Entity<Rebalanceamento>().ToTable("Rebalanceamentos");
+            modelBuilder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());
         }
     }
 }

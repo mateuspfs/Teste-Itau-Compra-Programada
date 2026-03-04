@@ -5,7 +5,5 @@ using Itau.CompraProgramada.Infrastructure.Repositories.Generic;
 
 namespace Itau.CompraProgramada.Infrastructure.Repositories
 {
-    public class RebalanceamentoRepository(ApplicationDbContext db) : GenericRepository<Rebalanceamento>(db), IRebalanceamentoRepository
-    {
-    }
+    public class LogRepository(ApplicationDbContext db) : GenericRepository<Log>(db), ILogRepository { }
 }

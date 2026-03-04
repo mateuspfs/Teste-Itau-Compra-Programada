@@ -1,6 +1,8 @@
-using Itau.CompraProgramada.Domain.Interfaces;
+using Itau.CompraProgramada.Domain.Interfaces.Imports;
 using Itau.CompraProgramada.Domain.Interfaces.Generic;
+using Itau.CompraProgramada.Domain.Interfaces.Respositories;
 using Itau.CompraProgramada.Infrastructure.Data;
+using Itau.CompraProgramada.Infrastructure.Imports;
 using Itau.CompraProgramada.Infrastructure.Repositories.Generic;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -14,6 +16,8 @@ namespace Itau.CompraProgramada.Infrastructure
         {
             AddDbContext(services, configuration);
             AddRepositories(services);
+            AddServices(services);
+            AddImports(services);
 
             return services;
         }
@@ -22,7 +26,7 @@ namespace Itau.CompraProgramada.Infrastructure
         {
             var connectionString = configuration.GetConnectionString("DefaultConnection");
 
-            services.AddDbContext<CompraProgramadaDbContext>(options =>
+            services.AddDbContext<ApplicationDbContext>(options =>
                 options.UseMySql(connectionString, new MySqlServerVersion(new Version(8, 0, 0))));
         }
 
@@ -39,6 +43,17 @@ namespace Itau.CompraProgramada.Infrastructure
             services.AddScoped<IEventoIRRepository, Repositories.EventoIRRepository>();
             services.AddScoped<ICotacaoRepository, Repositories.CotacaoRepository>();
             services.AddScoped<IRebalanceamentoRepository, Repositories.RebalanceamentoRepository>();
+            services.AddScoped<ILogRepository, Repositories.LogRepository>();
+        }
+
+        private static void AddServices(IServiceCollection services)
+        {
+            services.AddScoped<IInicializadorBanco, InicializadorBanco>();
+        }
+
+        private static void AddImports(IServiceCollection services)
+        {
+            services.AddScoped<ICotacaoImport, CotacaoImport>();
         }
     }
 }

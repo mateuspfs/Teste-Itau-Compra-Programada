@@ -8,6 +8,7 @@ namespace Itau.CompraProgramada.Domain.Interfaces.Generic
         Task<TEntity> GetByIdAsync(long id);
         Task<IEnumerable<TEntity>> GetAllAsync();
         Task AddAsync(TEntity entity);
+        Task AddRangeAsync(IEnumerable<TEntity> entities);
         void Update(TEntity entity);
         void Remove(TEntity entity);
         Task<int> SaveChangesAsync();
