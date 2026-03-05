@@ -12,6 +12,7 @@ namespace Itau.CompraProgramada.Infrastructure.Data.Config
             builder.HasKey(e => e.Id);
             builder.Property(e => e.Nome).HasMaxLength(200).IsRequired();
             builder.Property(e => e.CPF).HasMaxLength(11).IsRequired();
+            builder.HasIndex(e => e.CPF).IsUnique();
             builder.Property(e => e.Email).HasMaxLength(100).IsRequired();
             builder.Property(e => e.ValorMensal).HasPrecision(18, 4);
         }

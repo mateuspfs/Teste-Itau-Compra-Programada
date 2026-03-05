@@ -87,6 +87,9 @@ namespace Itau.CompraProgramada.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("CPF")
+                        .IsUnique();
+
                     b.ToTable("Clientes", (string)null);
                 });
 
@@ -115,6 +118,9 @@ namespace Itau.CompraProgramada.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("ClienteId");
+
+                    b.HasIndex("NumeroConta")
+                        .IsUnique();
 
                     b.ToTable("ContasGraficas", (string)null);
                 });

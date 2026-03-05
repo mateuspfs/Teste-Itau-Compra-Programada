@@ -17,5 +17,11 @@ namespace Itau.CompraProgramada.Domain.Entities
             Ativa = true;
             DataCriacao = DateTime.UtcNow;
         }
+
+        public void Desativar()
+        {
+            Ativa = false;
+            DataDesativacao = DateTime.UtcNow;
+        }
     }
 }

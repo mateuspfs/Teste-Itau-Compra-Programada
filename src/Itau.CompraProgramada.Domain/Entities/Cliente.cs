@@ -15,8 +15,11 @@ namespace Itau.CompraProgramada.Domain.Entities
 
         public Cliente(string nome, string cpf, string email, decimal valorMensal)
         {
+            if (!ValueObjects.Cpf.Validar(cpf))
+                throw new ArgumentException("CPF invalido.");
+
             Nome = nome;
-            CPF = cpf;
+            CPF = new ValueObjects.Cpf(cpf).Valor;
             Email = email;
             ValorMensal = valorMensal;
             Ativo = true;
@@ -24,5 +27,6 @@ namespace Itau.CompraProgramada.Domain.Entities
         }
 
         public void Desativar() => Ativo = false;
+        public void AlterarValorMensal(decimal novoValor) => ValorMensal = novoValor;
     }
 }

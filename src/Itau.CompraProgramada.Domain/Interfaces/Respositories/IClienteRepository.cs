@@ -5,5 +5,6 @@ namespace Itau.CompraProgramada.Domain.Interfaces.Respositories
 {
     public interface IClienteRepository : IGenericRepository<Cliente>
     {
+        Task<Cliente?> GetByCpfAsync(string cpf);
     }
 }

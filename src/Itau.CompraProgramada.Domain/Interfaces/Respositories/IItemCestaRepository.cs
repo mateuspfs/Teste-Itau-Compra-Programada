@@ -1,7 +1,12 @@
+using System.Collections.Generic;
+using System.Threading.Tasks;
 using Itau.CompraProgramada.Domain.Entities;
 using Itau.CompraProgramada.Domain.Interfaces.Generic;
 
 namespace Itau.CompraProgramada.Domain.Interfaces.Respositories
 {
-    public interface IItemCestaRepository : IGenericRepository<ItemCesta> { }
+    public interface IItemCestaRepository : IGenericRepository<ItemCesta>
+    {
+        Task<IEnumerable<ItemCesta>> GetByCestaIdAsync(long cestaId);
+    }
 }

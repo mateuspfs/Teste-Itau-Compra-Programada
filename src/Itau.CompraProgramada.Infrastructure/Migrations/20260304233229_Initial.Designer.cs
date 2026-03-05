@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Itau.CompraProgramada.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260304022755_Initial")]
+    [Migration("20260304233229_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -90,6 +90,9 @@ namespace Itau.CompraProgramada.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("CPF")
+                        .IsUnique();
+
                     b.ToTable("Clientes", (string)null);
                 });
 
@@ -118,6 +121,9 @@ namespace Itau.CompraProgramada.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("ClienteId");
+
+                    b.HasIndex("NumeroConta")
+                        .IsUnique();
 
                     b.ToTable("ContasGraficas", (string)null);
                 });

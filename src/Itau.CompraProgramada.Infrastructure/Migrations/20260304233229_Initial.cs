@@ -282,9 +282,21 @@ namespace Itau.CompraProgramada.Infrastructure.Migrations
                 .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Clientes_CPF",
+                table: "Clientes",
+                column: "CPF",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
                 name: "IX_ContasGraficas_ClienteId",
                 table: "ContasGraficas",
                 column: "ClienteId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ContasGraficas_NumeroConta",
+                table: "ContasGraficas",
+                column: "NumeroConta",
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_Custodias_ContaGraficaId",

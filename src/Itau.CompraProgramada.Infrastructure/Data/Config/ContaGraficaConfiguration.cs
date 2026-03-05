@@ -11,7 +11,8 @@ namespace Itau.CompraProgramada.Infrastructure.Data.Config
             builder.ToTable("ContasGraficas");
             builder.HasKey(e => e.Id);
             builder.Property(e => e.NumeroConta).HasMaxLength(20).IsRequired();
-            
+            builder.HasIndex(e => e.NumeroConta).IsUnique();
+
             builder.HasOne(e => e.Cliente)
                 .WithMany()
                 .HasForeignKey(e => e.ClienteId)
