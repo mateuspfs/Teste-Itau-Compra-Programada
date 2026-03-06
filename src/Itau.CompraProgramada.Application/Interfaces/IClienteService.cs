@@ -3,7 +3,7 @@ using Itau.CompraProgramada.Application.DTOs.Clientes;
 
 namespace Itau.CompraProgramada.Application.Interfaces
 {
-    public interface IClienteAppService
+    public interface IClienteService
     {
         Task<AdesaoClienteResponse> AderirAoProdutoAsync(AdesaoClienteRequest request);
         Task<SaidaProdutoResponse> SairDoProdutoAsync(long clienteId);

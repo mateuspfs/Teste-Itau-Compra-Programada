@@ -16,6 +16,7 @@ namespace Itau.CompraProgramada.Infrastructure.Data
         public DbSet<EventoIR> EventosIR { get; set; }
         public DbSet<Cotacao> Cotacoes { get; set; }
         public DbSet<Rebalanceamento> Rebalanceamentos { get; set; }
+        public DbSet<HistoricoValorMensal> HistoricoValorMensal { get; set; }
         public DbSet<Log> Logs { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)

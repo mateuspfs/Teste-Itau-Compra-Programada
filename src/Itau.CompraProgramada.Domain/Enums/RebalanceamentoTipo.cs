@@ -2,7 +2,7 @@ namespace Itau.CompraProgramada.Domain.Enums
 {
     public enum RebalanceamentoTipo
     {
-        MudancaCesta = 1,
-        Desvio = 2
+        MUDANCA_CESTA = 1,
+        DESVIO = 2
     }
 }

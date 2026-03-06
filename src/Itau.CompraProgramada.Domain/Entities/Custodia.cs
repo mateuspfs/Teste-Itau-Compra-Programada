@@ -22,5 +22,12 @@ namespace Itau.CompraProgramada.Domain.Entities
             PrecoMedio = precoMedio;
             DataUltimaAtualizacao = DateTime.UtcNow;
         }
+
+        public void AtualizarPosicao(int novaQuantidade, decimal novoPrecoMedio)
+        {
+            Quantidade = novaQuantidade;
+            PrecoMedio = novoPrecoMedio;
+            DataUltimaAtualizacao = DateTime.UtcNow;
+        }
     }
 }

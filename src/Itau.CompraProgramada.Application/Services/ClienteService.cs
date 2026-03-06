@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Itau.CompraProgramada.Application.DTOs.Clientes;
 using Itau.CompraProgramada.Application.Exceptions;
@@ -10,9 +11,13 @@ using Itau.CompraProgramada.Domain.ValueObjects;
 
 namespace Itau.CompraProgramada.Application.Services
 {
-    public class ClienteAppService(
+    public class ClienteService(
         IClienteRepository clienteRepository,
-        IContaGraficaRepository contaGraficaRepository) : IClienteAppService
+        IContaGraficaRepository contaGraficaRepository,
+        IHistoricoValorMensalRepository historicoRepository,
+        ICestaRecomendacaoRepository cestaRepository,
+        IItemCestaRepository itemCestaRepository,
+        ICustodiaRepository custodiaRepository) : IClienteService
     {
         public async Task<AdesaoClienteResponse> AderirAoProdutoAsync(AdesaoClienteRequest request)
         {
@@ -31,11 +36,24 @@ namespace Itau.CompraProgramada.Application.Services
             await clienteRepository.AddAsync(cliente);
             await clienteRepository.SaveChangesAsync();
 
+            // RN-004: Criar Conta Gráfica Filhote
             var numeroConta = $"FLH-{cliente.Id:D6}";
-            var contaGrafica = new ContaGrafica(cliente.Id, numeroConta, ContaTipo.Filhote);
-            
+            var contaGrafica = new ContaGrafica(cliente.Id, numeroConta, ContaTipo.FILHOTE);
             await contaGraficaRepository.AddAsync(contaGrafica);
             await contaGraficaRepository.SaveChangesAsync();
+
+            // RN-004: Criar a Custódia associada à Conta Gráfica Filhote (Inicialmente com 0)
+            var cestaAtiva = await cestaRepository.FirstOrDefaultAsync(c => c.Ativa);
+            if (cestaAtiva != null)
+            {
+                var itensCesta = await itemCestaRepository.GetByCestaIdAsync(cestaAtiva.Id);
+                foreach (var item in itensCesta)
+                {
+                    var custodia = new Custodia(contaGrafica.Id, item.Ticker, 0, 0);
+                    await custodiaRepository.AddAsync(custodia);
+                }
+                await custodiaRepository.SaveChangesAsync();
+            }
 
             return new AdesaoClienteResponse
             {
@@ -84,6 +102,11 @@ namespace Itau.CompraProgramada.Application.Services
                 throw new ValidationException("O valor mensal minímo e de R$ 100,00.", "VALOR_MENSAL_INVALIDO");
             
             var valorAnterior = cliente.ValorMensal;
+            
+            // RN-013: Manter histórico do valor anterior
+            var historico = new HistoricoValorMensal(clienteId, valorAnterior, request.NovoValorMensal);
+            await historicoRepository.AddAsync(historico);
+
             cliente.AlterarValorMensal(request.NovoValorMensal);
             await clienteRepository.SaveChangesAsync();
 

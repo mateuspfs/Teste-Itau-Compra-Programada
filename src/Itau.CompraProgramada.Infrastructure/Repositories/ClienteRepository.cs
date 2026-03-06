@@ -12,5 +12,10 @@ namespace Itau.CompraProgramada.Infrastructure.Repositories
         {
             return await _dbSet.FirstOrDefaultAsync(c => c.CPF == cpf);
         }
+
+        public async Task<IEnumerable<Cliente>> GetAtivosAsync()
+        {
+            return await _dbSet.Where(c => c.Ativo).ToListAsync();
+        }
     }
 }

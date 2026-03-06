@@ -1,5 +1,4 @@
-using System.Collections.Generic;
-using System.Threading.Tasks;
+using System.Linq.Expressions;
 using Itau.CompraProgramada.Domain.Entities;
 using Itau.CompraProgramada.Domain.Interfaces.Generic;
 using Itau.CompraProgramada.Infrastructure.Data;
@@ -45,6 +44,21 @@ namespace Itau.CompraProgramada.Infrastructure.Repositories.Generic
         public async Task<int> SaveChangesAsync()
         {
             return await _context.SaveChangesAsync();
+        }
+
+        public IQueryable<T> Where(Expression<Func<T, bool>> predicate)
+        {
+            return _dbSet.Where(predicate);
+        }
+
+        public async Task<T?> FirstOrDefaultAsync(Expression<Func<T, bool>> predicate)
+        {
+            return await _dbSet.FirstOrDefaultAsync(predicate);
+        }
+
+        public async Task<List<T>> ToListAsync(Expression<Func<T, bool>> predicate)
+        {
+            return await _dbSet.Where(predicate).ToListAsync();
         }
     }
 }

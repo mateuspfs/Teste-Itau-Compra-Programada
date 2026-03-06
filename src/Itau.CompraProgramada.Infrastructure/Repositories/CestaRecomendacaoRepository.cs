@@ -8,10 +8,6 @@ namespace Itau.CompraProgramada.Infrastructure.Repositories
 {
     public class CestaRecomendacaoRepository(ApplicationDbContext db) : GenericRepository<CestaRecomendacao>(db), ICestaRecomendacaoRepository
     {
-        public async Task<CestaRecomendacao?> GetAtivaAsync()
-        {
-            return await _dbSet.FirstOrDefaultAsync(c => c.Ativa);
-        }
 
         public async Task<IEnumerable<CestaRecomendacao>> GetHistoricoAsync()
         {

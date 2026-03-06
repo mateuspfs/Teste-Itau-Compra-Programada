@@ -7,7 +7,6 @@ namespace Itau.CompraProgramada.Domain.Interfaces.Respositories
 {
     public interface ICestaRecomendacaoRepository : IGenericRepository<CestaRecomendacao>
     {
-        Task<CestaRecomendacao?> GetAtivaAsync();
         Task<IEnumerable<CestaRecomendacao>> GetHistoricoAsync();
     }
 }

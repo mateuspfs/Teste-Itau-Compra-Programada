@@ -10,9 +10,10 @@ using Itau.CompraProgramada.Domain.Interfaces.Respositories;
 
 namespace Itau.CompraProgramada.Application.Services
 {
-    public class AdminAppService(
+    public class AdminService(
         ICestaRecomendacaoRepository cestaRepository,
-        IItemCestaRepository itemCestaRepository) : IAdminAppService
+        IItemCestaRepository itemCestaRepository,
+        IRebalanceamentoService rebalanceamentoService) : IAdminService
     {
         public async Task<CestaCadastroResponse> CadastrarAlterarCestaAsync(CestaRequest request)
         {
@@ -23,7 +24,10 @@ namespace Itau.CompraProgramada.Application.Services
             if (somaPercentuais != 100)
                 throw new ValidationException($"A soma dos percentuais deve ser exatamente 100%. Soma atual: {somaPercentuais}%.", "PERCENTUAIS_INVALIDOS");
 
-            var cestaAtual = await cestaRepository.GetAtivaAsync();
+            if (request.Itens.Any(i => i.Percentual <= 0))
+                throw new ValidationException("Cada ativo na cesta deve ter um percentual maior que 0%.", "PERCENTUAL_POSITIVO_REQUERIDO");
+
+            var cestaAtual = await cestaRepository.FirstOrDefaultAsync(c => c.Ativa);
             CestaResumoDTO? resumoAnterior = null;
             List<string>? ativosRemovidos = null;
             List<string>? ativosAdicionados = null;
@@ -80,12 +84,18 @@ namespace Itau.CompraProgramada.Application.Services
                 response.Mensagem = "Primeira cesta cadastrada com sucesso.";
             }
 
+            // RN-019: A alteração da cesta deve disparar o processo de rebalanceamento
+            if (resumoAnterior != null)
+            {
+                await rebalanceamentoService.ProcessarRebalanceamentoPorMudancaCestaAsync(resumoAnterior.CestaId, novaCesta.Id);
+            }
+
             return response;
         }
 
         public async Task<CestaDetalhesResponse> ObterCestaAtualAsync()
         {
-            var cesta = await cestaRepository.GetAtivaAsync();
+            var cesta = await cestaRepository.FirstOrDefaultAsync(c => c.Ativa);
             if (cesta == null)
                 throw new NotFoundException("Nenhuma cesta ativa encontrada.", "CESTA_NAO_ENCONTRADA");
 

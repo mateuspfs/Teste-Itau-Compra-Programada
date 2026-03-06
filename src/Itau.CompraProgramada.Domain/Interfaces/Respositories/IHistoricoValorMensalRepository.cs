@@ -3,8 +3,7 @@ using Itau.CompraProgramada.Domain.Interfaces.Generic;
 
 namespace Itau.CompraProgramada.Domain.Interfaces.Respositories
 {
-    public interface ICustodiaRepository : IGenericRepository<Custodia> 
+    public interface IHistoricoValorMensalRepository : IGenericRepository<HistoricoValorMensal>
     {
-        Task<IEnumerable<Custodia>> GetByContaGraficaIdAsync(long contaGraficaId);
     }
 }

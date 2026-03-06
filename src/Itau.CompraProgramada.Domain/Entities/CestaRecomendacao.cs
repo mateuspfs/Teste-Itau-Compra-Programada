@@ -6,7 +6,6 @@ namespace Itau.CompraProgramada.Domain.Entities
     {
         public string Nome { get; private set; }
         public bool Ativa { get; private set; }
-        public DateTime DataCriacao { get; private set; }
         public DateTime? DataDesativacao { get; private set; }
 
         protected CestaRecomendacao() { }

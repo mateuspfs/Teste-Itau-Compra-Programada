@@ -2,7 +2,7 @@ namespace Itau.CompraProgramada.Domain.Enums
 {
     public enum TipoMercado
     {
-        Lote = 1,
-        Fracionario = 2
+        LOTE = 1,
+        FRACIONARIO = 2
     }
 }

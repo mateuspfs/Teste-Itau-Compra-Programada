@@ -8,7 +8,6 @@ namespace Itau.CompraProgramada.Domain.Entities
         public long ClienteId { get; private set; }
         public string NumeroConta { get; private set; }
         public ContaTipo Tipo { get; private set; }
-        public DateTime DataCriacao { get; private set; }
 
         public virtual Cliente Cliente { get; private set; }
 

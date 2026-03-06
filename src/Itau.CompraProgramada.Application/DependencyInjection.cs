@@ -8,8 +8,11 @@ namespace Itau.CompraProgramada.Application
     {
         public static IServiceCollection AddApplication(this IServiceCollection services)
         {
-            services.AddScoped<IClienteAppService, ClienteAppService>();
-            services.AddScoped<IAdminAppService, AdminAppService>();
+            services.AddScoped<IClienteService, ClienteService>();
+            services.AddScoped<IAdminService, AdminService>();
+            services.AddScoped<IRebalanceamentoService, RebalanceamentoService>();
+            services.AddScoped<ICarteiraService, CarteiraService>();
+            services.AddScoped<IIRService, IRService>();
 
             return services;
         }

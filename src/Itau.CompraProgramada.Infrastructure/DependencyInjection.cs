@@ -1,8 +1,8 @@
-using Itau.CompraProgramada.Domain.Interfaces.Imports;
 using Itau.CompraProgramada.Domain.Interfaces.Generic;
+using Itau.CompraProgramada.Domain.Interfaces.Messaging;
 using Itau.CompraProgramada.Domain.Interfaces.Respositories;
 using Itau.CompraProgramada.Infrastructure.Data;
-using Itau.CompraProgramada.Infrastructure.Imports;
+using Itau.CompraProgramada.Infrastructure.Messaging;
 using Itau.CompraProgramada.Infrastructure.Repositories.Generic;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -17,7 +17,6 @@ namespace Itau.CompraProgramada.Infrastructure
             AddDbContext(services, configuration);
             AddRepositories(services);
             AddServices(services);
-            AddImports(services);
 
             return services;
         }
@@ -44,16 +43,15 @@ namespace Itau.CompraProgramada.Infrastructure
             services.AddScoped<ICotacaoRepository, Repositories.CotacaoRepository>();
             services.AddScoped<IRebalanceamentoRepository, Repositories.RebalanceamentoRepository>();
             services.AddScoped<ILogRepository, Repositories.LogRepository>();
+            services.AddScoped<IHistoricoValorMensalRepository, Repositories.HistoricoValorMensalRepository>();
+            services.AddScoped<IUnitOfWork, Data.UnitOfWork>();
+
         }
 
         private static void AddServices(IServiceCollection services)
         {
             services.AddScoped<IInicializadorBanco, InicializadorBanco>();
-        }
-
-        private static void AddImports(IServiceCollection services)
-        {
-            services.AddScoped<ICotacaoImport, CotacaoImport>();
+            services.AddScoped<IMessagingService, MockMessagingService>();
         }
     }
 }

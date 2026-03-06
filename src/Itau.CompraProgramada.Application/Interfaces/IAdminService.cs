@@ -4,7 +4,7 @@ using Itau.CompraProgramada.Application.DTOs.Admin;
 
 namespace Itau.CompraProgramada.Application.Interfaces
 {
-    public interface IAdminAppService
+    public interface IAdminService
     {
         Task<CestaCadastroResponse> CadastrarAlterarCestaAsync(CestaRequest request);
         Task<CestaDetalhesResponse> ObterCestaAtualAsync();
