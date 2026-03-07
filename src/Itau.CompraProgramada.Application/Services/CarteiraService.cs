@@ -30,9 +30,16 @@ namespace Itau.CompraProgramada.Application.Services
 
             var custodias = await custodiaRepository.GetByContaGraficaIdAsync(conta.Id);
             
-            var response = new CarteiraResponse();
-            decimal valorInvestidoTotal = 0;
-            decimal valorAtualTotal = 0;
+            var response = new CarteiraResponse
+            {
+                ClienteId = cliente.Id,
+                Nome = cliente.Nome,
+                ContaGrafica = conta.NumeroConta,
+                DataConsulta = DateTime.UtcNow
+            };
+
+            decimal valorTotalInvestido = 0;
+            decimal valorAtualCarteira = 0;
 
             foreach (var custodia in custodias)
             {
@@ -46,30 +53,31 @@ namespace Itau.CompraProgramada.Application.Services
                     PrecoMedio = custodia.PrecoMedio,
                     CotacaoAtual = precoAtual,
                     ValorAtual = custodia.Quantidade * precoAtual,
-                    PL = (precoAtual - custodia.PrecoMedio) * custodia.Quantidade
+                    PL = (precoAtual - custodia.PrecoMedio) * custodia.Quantidade,
+                    PLPercentual = custodia.PrecoMedio > 0 ? ((precoAtual - custodia.PrecoMedio) / custodia.PrecoMedio) * 100 : 0
                 };
 
-                valorInvestidoTotal += custodia.Quantidade * custodia.PrecoMedio;
-                valorAtualTotal += ativoDto.ValorAtual;
+                valorTotalInvestido += custodia.Quantidade * custodia.PrecoMedio;
+                valorAtualCarteira += ativoDto.ValorAtual;
 
                 response.Ativos.Add(ativoDto);
             }
 
-            response.ValorInvestidoTotal = valorInvestidoTotal;
-            response.ValorAtualTotal = valorAtualTotal;
-            response.PLTotal = valorAtualTotal - valorInvestidoTotal;
+            response.Resumo.ValorTotalInvestido = valorTotalInvestido;
+            response.Resumo.ValorAtualCarteira = valorAtualCarteira;
+            response.Resumo.PLTotal = valorAtualCarteira - valorTotalInvestido;
             
-            if (valorInvestidoTotal > 0)
+            if (valorTotalInvestido > 0)
             {
-                response.RentabilidadePercentual = ((valorAtualTotal - valorInvestidoTotal) / valorInvestidoTotal) * 100;
+                response.Resumo.RentabilidadePercentual = ((valorAtualCarteira - valorTotalInvestido) / valorTotalInvestido) * 100;
             }
 
             // RN-070: Composição percentual real
-            if (valorAtualTotal > 0)
+            if (valorAtualCarteira > 0)
             {
                 foreach (var ativo in response.Ativos)
                 {
-                    ativo.ComposicaoPercentual = (ativo.ValorAtual / valorAtualTotal) * 100;
+                    ativo.ComposicaoCarteira = (ativo.ValorAtual / valorAtualCarteira) * 100;
                 }
             }
 

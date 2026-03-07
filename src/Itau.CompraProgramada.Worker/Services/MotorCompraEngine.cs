@@ -1,7 +1,9 @@
+using Itau.CompraProgramada.Application.DTOs.Admin;
 using Itau.CompraProgramada.Application.Interfaces;
 using Itau.CompraProgramada.Domain.Entities;
 using Itau.CompraProgramada.Domain.Enums;
 using Itau.CompraProgramada.Domain.Interfaces.Generic;
+using Microsoft.Extensions.Logging;
 
 namespace Itau.CompraProgramada.Worker.Services
 {
@@ -10,12 +12,18 @@ namespace Itau.CompraProgramada.Worker.Services
         IIRService irService,
         ILogger<MotorCompraEngine> logger) : IMotorCompraEngine
     {
-        public async Task ExecutarProcessamentoDiarioAsync(DateTime dataProcessamento)
+        public async Task<MotorCompraResponse> ExecutarProcessamentoDiarioAsync(DateTime dataProcessamento)
         {
+            var response = new MotorCompraResponse
+            {
+                DataExecucao = dataProcessamento,
+                Mensagem = "Hoje não é um dia de execução programada."
+            };
+
             if (!DiaDeExecucao(dataProcessamento))
             {
                 logger.LogInformation("Hoje ({data}) não é um dia de execução programada (5, 15 ou 25).", dataProcessamento.ToShortDateString());
-                return;
+                return response;
             }
 
             logger.LogInformation("Iniciando processamento do Motor de Compra para {data}...", dataProcessamento.ToShortDateString());
@@ -23,54 +31,82 @@ namespace Itau.CompraProgramada.Worker.Services
             var cestaAtiva = await uow.Cestas.FirstOrDefaultAsync(c => c.Ativa);
             if (cestaAtiva == null)
             {
-                logger.LogWarning("Nenhuma cesta de recomendação ativa encontrada. O motor não pode prosseguir.");
-                return;
+                response.Mensagem = "Nenhuma cesta de recomendação ativa encontrada.";
+                return response;
             }
 
             var itensCesta = (await uow.ItensCesta.GetByCestaIdAsync(cestaAtiva.Id)).ToList();
             if (itensCesta.Count == 0)
             {
-                logger.LogWarning("A cesta ativa {id} não possui itens cadastrados.", cestaAtiva.Id);
-                return;
+                response.Mensagem = "A cesta ativa não possui itens cadastrados.";
+                return response;
             }
 
-            // Encontrar Conta Master e identificar seu Cliente
             var contaMaster = await uow.Contas.FirstOrDefaultAsync(c => c.Tipo == ContaTipo.MASTER);
             if (contaMaster == null)
             {
-                logger.LogWarning("Conta Master não encontrada. O motor não pode prosseguir.");
-                return;
+                response.Mensagem = "Conta Master não encontrada.";
+                return response;
             }
 
-            // Buscar Clientes Ativos excluindo o Cliente Master
             var clientesAtivos = await uow.Clientes.ToListAsync(c => c.Ativo && c.Id != contaMaster.ClienteId);
             if (clientesAtivos.Count == 0)
             {
-                logger.LogInformation("Nenhum cliente ativo (além do Master) encontrado para processamento.");
-                return;
+                response.Mensagem = "Nenhum cliente ativo encontrado.";
+                return response;
             }
 
             // RN-025: O valor de cada cliente para a data e: ValorMensal / 3
             decimal valorTotalConsolidado = clientesAtivos.Sum(c => c.ValorMensal / 3);
+            response.TotalClientes = clientesAtivos.Count;
+            response.TotalConsolidado = valorTotalConsolidado;
 
-            // Para cada item da cesta, processar compra e distribuição
+            // Inicializar distribuicoes no response por cliente
+            foreach (var cliente in clientesAtivos)
+            {
+                response.Distribuicoes.Add(new MotorDistribuicaoDTO
+                {
+                    ClienteId = cliente.Id,
+                    Nome = cliente.Nome,
+                    ValorAporte = cliente.ValorMensal / 3
+                });
+            }
+
+            int totalEventosIR = 0;
+
             foreach (var item in itensCesta)
             {
                 logger.LogInformation("Processando ativo {ticker}...", item.Ticker);
-                await ProcessarItemCestaAsync(item, valorTotalConsolidado, clientesAtivos, contaMaster);
+                totalEventosIR += await ProcessarItemCestaAsync(item, valorTotalConsolidado, clientesAtivos, contaMaster, response);
+            }
+
+            // Consultar resíduos finais na Master
+            var custodiasMaster = await uow.Custodias.GetByContaGraficaIdAsync(contaMaster.Id);
+            foreach (var cust in custodiasMaster.Where(c => c.Quantidade > 0))
+            {
+                response.ResiduosCustMaster.Add(new MotorResiduoMasterDTO
+                {
+                    Ticker = cust.Ticker,
+                    Quantidade = cust.Quantidade
+                });
             }
 
             await uow.CommitAsync();
+            
+            response.EventosIRPublicados = totalEventosIR;
+            response.Mensagem = $"Compra programada executada com sucesso para {clientesAtivos.Count} clientes.";
+            
             logger.LogInformation("Processamento do Motor de Compra finalizado com sucesso.");
+            return response;
         }
 
-        private async Task ProcessarItemCestaAsync(ItemCesta item, decimal valorTotalConsolidado, List<Cliente> clientesAtivos, ContaGrafica contaMaster)
+        private async Task<int> ProcessarItemCestaAsync(ItemCesta item, decimal valorTotalConsolidado, List<Cliente> clientesAtivos, ContaGrafica contaMaster, MotorCompraResponse response)
         {
             decimal valorAlvoConsolidado = valorTotalConsolidado * (item.Percentual / 100);
             
             var cotacao = await uow.Cotacoes.GetUltimaCotacaoAsync(item.Ticker);
             decimal preco = cotacao?.PrecoFechamento ?? 0;
-            if (preco <= 0) return;
+            if (preco <= 0) return 0;
 
             // RN-028/029: Quantidade Alvo e considerar saldo Master
             int qtdAlvoTotal = (int)(valorAlvoConsolidado / preco);
@@ -82,20 +118,37 @@ namespace Itau.CompraProgramada.Worker.Services
             int qtdAComprar = qtdAlvoTotal - saldoMasterAnterior;
             if (qtdAComprar < 0) qtdAComprar = 0;
 
-            // Executar Compras na Master (Lote vs Fracionário)
             List<OrdemCompra> ordensCriadas = [];
             if (qtdAComprar > 0)
             {
                 ordensCriadas = await ExecutarOrdensMasterAsync(contaMaster.Id, item.Ticker, qtdAComprar, preco);
+                
+                var motorOrdem = new MotorOrdemCompraDTO
+                {
+                    Ticker = item.Ticker,
+                    QuantidadeTotal = qtdAComprar,
+                    PrecoUnitario = preco,
+                    ValorTotal = qtdAComprar * preco
+                };
+
+                foreach (var o in ordensCriadas)
+                {
+                    motorOrdem.Detalhes.Add(new MotorOrdemDetalheDTO
+                    {
+                        Tipo = o.TipoMercado.ToString(),
+                        Ticker = o.Ticker,
+                        Quantidade = o.Quantidade
+                    });
+                }
+                response.OrdensCompra.Add(motorOrdem);
             }
 
-            // Distribuir para Clientes (Compradas + Saldo Master)
             int qtdDisponivelParaDistribuir = qtdAComprar + saldoMasterAnterior;
-            if (qtdDisponivelParaDistribuir <= 0) return;
+            if (qtdDisponivelParaDistribuir <= 0) return 0;
 
             var ordemPrincipal = ordensCriadas.FirstOrDefault();
             
-            await DistribuirParaClientesAsync(item.Ticker, preco, qtdDisponivelParaDistribuir, valorTotalConsolidado, clientesAtivos, contaMaster.Id, ordemPrincipal?.Id);
+            return await DistribuirParaClientesAsync(item.Ticker, preco, qtdDisponivelParaDistribuir, valorTotalConsolidado, clientesAtivos, contaMaster.Id, ordemPrincipal?.Id, response);
         }
 
         private async Task<List<OrdemCompra>> ExecutarOrdensMasterAsync(long contaMasterId, string ticker, int quantidade, decimal preco)
@@ -123,7 +176,6 @@ namespace Itau.CompraProgramada.Worker.Services
 
             await uow.CommitAsync();
 
-            // Atualizar Custodia Master (Simulação da execução)
             var custodiasMaster = await uow.Custodias.GetByContaGraficaIdAsync(contaMasterId);
             var custodia = custodiasMaster.FirstOrDefault(c => c.Ticker == ticker);
 
@@ -142,12 +194,14 @@ namespace Itau.CompraProgramada.Worker.Services
             return ordens;
         }
 
-        private async Task DistribuirParaClientesAsync(string ticker, decimal preco, int qtdTotalDisponivel, decimal valorTotalAportes, List<Cliente> clientes, long contaMasterId, long? ordemCompraId)
+        private async Task<int> DistribuirParaClientesAsync(string ticker, decimal preco, int qtdTotalDisponivel, decimal valorTotalAportes, List<Cliente> clientes, long contaMasterId, long? ordemCompraId, MotorCompraResponse response)
         {
             int qtdJaDistribuida = 0;
+            int eventosIR = 0;
 
             foreach (var cliente in clientes)
             {
+                // RN-025: O valor de cada cliente para a data e: ValorMensal / 3
                 decimal aporteNoDia = cliente.ValorMensal / 3;
                 decimal proporcao = aporteNoDia / valorTotalAportes;
                 // RN-036: Quantidade por cliente = TRUNCAR(Proporcao x Quantidade Total Disponivel)
@@ -175,22 +229,29 @@ namespace Itau.CompraProgramada.Worker.Services
 
                 await uow.CommitAsync();
 
-                // Registrar Distribuição se tiver ordem
                 if (ordemCompraId.HasValue)
                 {
                     var dist = new Distribuicao(ordemCompraId.Value, custodia.Id, ticker, qtdCliente, preco);
                     await uow.Distribuicoes.AddAsync(dist);
                 }
                 
+                var distDto = response.Distribuicoes.First(d => d.ClienteId == cliente.Id);
+                distDto.Ativos.Add(new MotorAtivoDTO { Ticker = ticker, Quantidade = qtdCliente });
+
                 qtdJaDistribuida += qtdCliente;
 
                 // RN-053: Alíquota de 0,005% (IR Dedo-Duro) sobre o valor total da operação
                 await irService.ProcessarIRDedoDuroAsync(cliente.Id, ticker, qtdCliente * preco, "COMPRA", qtdCliente, preco);
+                eventosIR++;
             }
 
-            // Atualizar Saldo Master (Subtrair o que foi distribuído)
             var custodiaMaster = await uow.Custodias.FirstOrDefaultAsync(c => c.ContaGraficaId == contaMasterId && c.Ticker == ticker);
-            custodiaMaster?.AtualizarPosicao(custodiaMaster.Quantidade - qtdJaDistribuida, custodiaMaster.PrecoMedio);
+            if (custodiaMaster != null)
+            {
+                custodiaMaster.AtualizarPosicao(custodiaMaster.Quantidade - qtdJaDistribuida, custodiaMaster.PrecoMedio);
+            }
+
+            return eventosIR;
         }
 
         private static bool DiaDeExecucao(DateTime data)

@@ -23,9 +23,9 @@ namespace Itau.CompraProgramada.API.Controllers
             if (!DateTime.TryParse(data, CultureInfo.InvariantCulture, DateTimeStyles.None, out var dataProcessamento))
                 dataProcessamento = DateTime.UtcNow;
 
-            await motorCompraEngine.ExecutarProcessamentoDiarioAsync(dataProcessamento);
+            var result = await motorCompraEngine.ExecutarProcessamentoDiarioAsync(dataProcessamento);
             
-            return Ok(new { mensagem = "Processamento do motor disparado para a data informada.", data = dataProcessamento });
+            return Ok(result);
         }
     }
 }
