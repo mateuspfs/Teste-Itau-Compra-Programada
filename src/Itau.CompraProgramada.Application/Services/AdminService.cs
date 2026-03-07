@@ -13,7 +13,10 @@ namespace Itau.CompraProgramada.Application.Services
     public class AdminService(
         ICestaRecomendacaoRepository cestaRepository,
         IItemCestaRepository itemCestaRepository,
-        IRebalanceamentoService rebalanceamentoService) : IAdminService
+        IRebalanceamentoService rebalanceamentoService,
+        IContaGraficaRepository contaGraficaRepository,
+        ICustodiaRepository custodiaRepository,
+        ICotacaoRepository cotacaoRepository) : IAdminService
     {
         public async Task<CestaCadastroResponse> CadastrarAlterarCestaAsync(CestaRequest request)
         {
@@ -136,6 +139,50 @@ namespace Itau.CompraProgramada.Application.Services
             }
 
             return responses;
+        }
+
+        public async Task<CustodiaMasterResponse> ObterCustodiaMasterAsync()
+        {
+            var todasContas = await contaGraficaRepository.GetAllAsync();
+            var contaMaster = todasContas.FirstOrDefault(c => c.Tipo == Itau.CompraProgramada.Domain.Enums.ContaTipo.MASTER)
+                ?? throw new NotFoundException("Conta Master não encontrada.", "CONTA_MASTER_NAO_ENCONTRADA");
+
+            var custodias = await custodiaRepository.GetByContaGraficaIdAsync(contaMaster.Id);
+            
+            var response = new CustodiaMasterResponse
+            {
+                ContaMaster = new ContaMasterDTO
+                {
+                    Id = contaMaster.Id,
+                    NumeroConta = contaMaster.NumeroConta,
+                    Tipo = contaMaster.Tipo.ToString()
+                }
+            };
+
+            decimal valorTotalResiduo = 0;
+
+            foreach (var custodia in custodias)
+            {
+                if (custodia.Quantidade <= 0) continue;
+
+                var cotacao = await cotacaoRepository.GetUltimaCotacaoAsync(custodia.Ticker);
+                decimal precoAtual = cotacao?.PrecoFechamento ?? 0;
+
+                response.Custodia.Add(new ItemCustodiaMasterDTO
+                {
+                    Ticker = custodia.Ticker,
+                    Quantidade = custodia.Quantidade,
+                    PrecoMedio = custodia.PrecoMedio,
+                    ValorAtual = custodia.Quantidade * precoAtual,
+                    Origem = "Resíduo distribuição anterior"
+                });
+
+                valorTotalResiduo += custodia.Quantidade * precoAtual;
+            }
+
+            response.ValorTotalResiduo = valorTotalResiduo;
+
+            return response;
         }
     }
 }

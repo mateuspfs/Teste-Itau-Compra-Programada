@@ -23,6 +23,12 @@ namespace Itau.CompraProgramada.Infrastructure
 
         private static void AddDbContext(IServiceCollection services, IConfiguration configuration)
         {
+            var provider = configuration["DatabaseProvider"];
+            if (provider == "Sqlite")
+            {
+                return;
+            }
+
             var connectionString = configuration.GetConnectionString("DefaultConnection");
 
             services.AddDbContext<ApplicationDbContext>(options =>
@@ -51,7 +57,7 @@ namespace Itau.CompraProgramada.Infrastructure
         private static void AddServices(IServiceCollection services)
         {
             services.AddScoped<IInicializadorBanco, InicializadorBanco>();
-            services.AddScoped<IMessagingService, MockMessagingService>();
+            services.AddSingleton<IMessagingService, KafkaMessagingService>();
         }
     }
 }

@@ -17,7 +17,8 @@ namespace Itau.CompraProgramada.Application.Services
         IHistoricoValorMensalRepository historicoRepository,
         ICestaRecomendacaoRepository cestaRepository,
         IItemCestaRepository itemCestaRepository,
-        ICustodiaRepository custodiaRepository) : IClienteService
+        ICustodiaRepository custodiaRepository,
+        ICotacaoRepository cotacaoRepository) : IClienteService
     {
         public async Task<AdesaoClienteResponse> AderirAoProdutoAsync(AdesaoClienteRequest request)
         {
@@ -118,6 +119,61 @@ namespace Itau.CompraProgramada.Application.Services
                 DataAlteracao = DateTime.UtcNow,
                 Mensagem = "Valor mensal atualizado. O novo valor será considerado a partir da próxima data de compra."
             };
+        }
+
+        public async Task<RentabilidadeResponse> ObterRentabilidadeAsync(long clienteId)
+        {
+            var cliente = await clienteRepository.GetByIdAsync(clienteId) 
+                ?? throw new NotFoundException("Cliente não encontrado.", "CLIENTE_NAO_ENCONTRADO");
+
+            var todasContas = await contaGraficaRepository.GetAllAsync();
+            var conta = todasContas.FirstOrDefault(c => c.ClienteId == clienteId && c.Tipo == ContaTipo.FILHOTE);
+
+            if (conta == null)
+                throw new NotFoundException("Conta gráfica não encontrada para este cliente.", "CONTA_NAO_ENCONTRADA");
+
+            var custodias = await custodiaRepository.GetByContaGraficaIdAsync(conta.Id);
+            decimal valorInvestidoTotal = 0;
+            decimal valorAtualTotal = 0;
+
+            foreach (var custodia in custodias)
+            {
+                var cotacao = await cotacaoRepository.GetUltimaCotacaoAsync(custodia.Ticker);
+                decimal precoAtual = cotacao?.PrecoFechamento ?? 0;
+
+                valorInvestidoTotal += custodia.Quantidade * custodia.PrecoMedio;
+                valorAtualTotal += custodia.Quantidade * precoAtual;
+            }
+
+            var response = new RentabilidadeResponse
+            {
+                ClienteId = cliente.Id,
+                Nome = cliente.Nome,
+                DataConsulta = DateTime.UtcNow,
+                Rentabilidade = new RentabilidadeResumoDTO
+                {
+                    ValorTotalInvestido = valorInvestidoTotal,
+                    ValorAtualCarteira = valorAtualTotal,
+                    PLTotal = valorAtualTotal - valorInvestidoTotal,
+                    RentabilidadePercentual = valorInvestidoTotal > 0 ? ((valorAtualTotal - valorInvestidoTotal) / valorInvestidoTotal) * 100 : 0
+                }
+            };
+
+            // Para fins de demonstração do contrato (RN-063 a RN-070), retornamos dados mockados de histórico
+            // Em aplicação real, isso viria de tabelas de histórico diário.
+            response.HistoricoAportes = new List<HistoricoAporteDTO>
+            {
+                new() { Data = DateTime.UtcNow.AddMonths(-1).AddDays(5), Valor = cliente.ValorMensal / 3, Parcela = "1/3" },
+                new() { Data = DateTime.UtcNow.AddMonths(-1).AddDays(15), Valor = cliente.ValorMensal / 3, Parcela = "2/3" },
+                new() { Data = DateTime.UtcNow.AddMonths(-1).AddDays(25), Valor = cliente.ValorMensal / 3, Parcela = "3/3" }
+            };
+
+            response.EvolucaoCarteira = new List<EvolucaoCarteiraDTO>
+            {
+                new() { Data = DateTime.UtcNow.AddMonths(-1).AddDays(25), ValorInvestido = valorInvestidoTotal, ValorCarteira = valorAtualTotal, Rentabilidade = response.Rentabilidade.RentabilidadePercentual }
+            };
+
+            return response;
         }
     }
 }

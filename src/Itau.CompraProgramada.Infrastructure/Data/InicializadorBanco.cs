@@ -1,9 +1,11 @@
+using Itau.CompraProgramada.Domain.Utils;
 using Microsoft.EntityFrameworkCore;
 using Itau.CompraProgramada.Domain.Entities;
 using Microsoft.Extensions.Logging;
 using Itau.CompraProgramada.Domain.Interfaces.Respositories;
 using Itau.CompraProgramada.Domain.Enums;
 using Itau.CompraProgramada.Domain.Interfaces.Processor;
+using Microsoft.Extensions.Configuration;
 
 namespace Itau.CompraProgramada.Infrastructure.Data
 {
@@ -16,6 +18,7 @@ namespace Itau.CompraProgramada.Infrastructure.Data
         ApplicationDbContext context,
         ICotacaoProcessor cotacaoService,
         ILogRepository logRepository,
+        IConfiguration configuration,
         ILogger<InicializadorBanco> logger) : IInicializadorBanco
     {
         public async Task InicializarAsync()
@@ -48,23 +51,36 @@ namespace Itau.CompraProgramada.Infrastructure.Data
             {
                 // Garantir existência da Conta Master e Cliente Master no sistema
                 logger.LogInformation("Conta Master não encontrada. Criando registros mestre...");
-                var cpfMaster = "000000000";
+                var cpfMaster = CpfUtils.GerarCpfRelativo(1);
                 var clienteMaster = await context.Clientes.FirstOrDefaultAsync(c => c.CPF == cpfMaster);
+
                 if (clienteMaster == null)
                 {
-                    logger.LogInformation("Inserindo Cliente Master via SQL...");
-                    await context.Database.ExecuteSqlRawAsync(
-                        "INSERT INTO Clientes (Nome, CPF, Email, ValorMensal, Ativo, DataAdesao, DataCriacao) VALUES ({0}, {1}, {2}, {3}, {4}, {5}, {6})",
-                        "ITA CORRETORA MASTER", cpfMaster, "master@itau.com.br", 0, 1, DateTime.UtcNow, DateTime.UtcNow);
-                    
-                    clienteMaster = await context.Clientes.FirstOrDefaultAsync(c => c.CPF == cpfMaster);
+                    clienteMaster = new Cliente("ITA CORRETORA MASTER", cpfMaster, "master@itau.com.br", 0);
+                    await context.Clientes.AddAsync(clienteMaster);
+                    await context.SaveChangesAsync();
                 }
 
                 contaMaster = new ContaGrafica(clienteMaster.Id, "99999-9", ContaTipo.MASTER);
+                
                 await context.ContasGraficas.AddAsync(contaMaster);
                 await context.SaveChangesAsync();
+
+                // RN-004 adaptada: Inicializar custódia zerada para a Master também
+                var cestaAtiva = await context.CestasRecomendacao.FirstOrDefaultAsync(c => c.Ativa);
+                if (cestaAtiva != null)
+                {
+                    logger.LogInformation("Inicializando custódia da Conta Master para a cesta ativa {cestaId}", cestaAtiva.Id);
+                    var itensCesta = await context.ItensCesta.Where(i => i.CestaId == cestaAtiva.Id).ToListAsync();
+                    foreach (var item in itensCesta)
+                    {
+                        var custodia = new Custodia(contaMaster.Id, item.Ticker, 0, 0);
+                        await context.Custodias.AddAsync(custodia);
+                    }
+                    await context.SaveChangesAsync();
+                }
                 
-                await LogAsync("Information", "Conta Master e Cliente Master criados com sucesso.");
+                await LogAsync("Information", "Conta Master e Custódia Inicial criadas com sucesso.");
             }
         }
 
@@ -75,25 +91,35 @@ namespace Itau.CompraProgramada.Infrastructure.Data
             {
                 logger.LogInformation("Tabela de cotações vazia. Iniciando importação...");
                 
-                string cotacoesPath = Path.Combine(AppContext.BaseDirectory, "cotacoes");
+                string cotacoesPath = configuration["SeedData:CotacoesPath"] ?? Path.Combine(AppContext.BaseDirectory, "cotacoes");
 
                 if (!Directory.Exists(cotacoesPath))
                 {
+                    logger.LogWarning("Diretório de cotações não encontrado em {path}. Tentando subir níveis...", cotacoesPath);
                     var currentDir = new DirectoryInfo(AppContext.BaseDirectory);
-                    while (currentDir != null && !Directory.Exists(Path.Combine(currentDir.FullName, "cotacoes")))
+                    while (currentDir != null && !Directory.Exists(Path.Combine(currentDir.FullName, "cotacoes")) && !Directory.Exists(Path.Combine(currentDir.FullName, "Resources")))
                         currentDir = currentDir.Parent;
                     
                     if (currentDir != null)
-                        cotacoesPath = Path.Combine(currentDir.FullName, "cotacoes");
+                    {
+                        var tryPath = Path.Combine(currentDir.FullName, "cotacoes");
+                        if (!Directory.Exists(tryPath)) tryPath = Path.Combine(currentDir.FullName, "Resources");
+                        cotacoesPath = tryPath;
+                    }
                 }
 
                 if (Directory.Exists(cotacoesPath))
                 {
-                    string[] arquivos = Directory.GetFiles(cotacoesPath, "*.TXT");
+                    logger.LogInformation("Importando cotações de {path}", cotacoesPath);
+                    string[] arquivos = [.. Directory.GetFiles(cotacoesPath, "*.*").Where(f => f.EndsWith(".TXT", StringComparison.OrdinalIgnoreCase) 
+                                        || f.EndsWith(".txt", StringComparison.OrdinalIgnoreCase))];
+                        
                     foreach (string arquivo in arquivos)
-                    {
                         await cotacaoService.ProcessarArquivoAsync(arquivo);
-                    }
+                }
+                else
+                {
+                    logger.LogWarning("Diretório de cotações não pôde ser resolvido.");
                 }
             }
         }

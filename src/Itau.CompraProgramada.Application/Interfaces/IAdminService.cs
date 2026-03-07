@@ -9,5 +9,6 @@ namespace Itau.CompraProgramada.Application.Interfaces
         Task<CestaCadastroResponse> CadastrarAlterarCestaAsync(CestaRequest request);
         Task<CestaDetalhesResponse> ObterCestaAtualAsync();
         Task<IEnumerable<CestaHistoricoResponse>> ObterHistoricoCestasAsync();
+        Task<CustodiaMasterResponse> ObterCustodiaMasterAsync();
     }
 }

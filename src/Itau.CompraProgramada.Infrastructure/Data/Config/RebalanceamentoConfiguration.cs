@@ -10,9 +10,10 @@ namespace Itau.CompraProgramada.Infrastructure.Data.Config
         {
             builder.ToTable("Rebalanceamentos");
             builder.HasKey(e => e.Id);
-            builder.Property(e => e.TickerVendido).HasMaxLength(12).IsRequired();
-            builder.Property(e => e.TickerComprado).HasMaxLength(12).IsRequired();
+            builder.Property(e => e.TickerVendido).HasMaxLength(12).IsRequired(false);
+            builder.Property(e => e.TickerComprado).HasMaxLength(12).IsRequired(false);
             builder.Property(e => e.ValorVenda).HasPrecision(18, 4);
+            builder.Property(e => e.Lucro).HasPrecision(18, 4);
 
             builder.HasOne(e => e.Cliente)
                 .WithMany()

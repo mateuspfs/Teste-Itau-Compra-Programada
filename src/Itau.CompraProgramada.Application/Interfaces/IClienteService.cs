@@ -8,5 +8,6 @@ namespace Itau.CompraProgramada.Application.Interfaces
         Task<AdesaoClienteResponse> AderirAoProdutoAsync(AdesaoClienteRequest request);
         Task<SaidaProdutoResponse> SairDoProdutoAsync(long clienteId);
         Task<AlterarValorMensalResponse> AlterarValorMensalAsync(long clienteId, AlterarValorMensalRequest request);
+        Task<RentabilidadeResponse> ObterRentabilidadeAsync(long clienteId);
     }
 }

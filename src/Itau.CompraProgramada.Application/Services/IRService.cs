@@ -64,9 +64,9 @@ namespace Itau.CompraProgramada.Application.Services
 
             if (totalVendas <= LIMITE_ISENCAO_VENDA) return;
 
-            // RN-059: 20% sobre lucro líquido
-            decimal lucroEstimado = totalVendas * 0.1m;
-            decimal valorIR = lucroEstimado > 0 ? Math.Round(lucroEstimado * ALIQUOTA_IR_LUCRO, 2) : 0;
+            // RN-059/RN-060: 20% sobre lucro líquido Real
+            decimal lucroTotal = vendasMes.Sum(v => v.Lucro);
+            decimal valorIR = lucroTotal > 0 ? Math.Round(lucroTotal * ALIQUOTA_IR_LUCRO, 2) : 0;
 
             if (valorIR <= 0) return;
 
@@ -77,7 +77,7 @@ namespace Itau.CompraProgramada.Application.Services
                 cpf = cliente.CPF,
                 mesReferencia = $"{ano}-{mes:D2}",
                 totalVendasMes = totalVendas,
-                lucroLiquido = lucroEstimado,
+                lucroLiquido = lucroTotal,
                 aliquota = ALIQUOTA_IR_LUCRO,
                 valorIR,
                 dataCalculo = DateTime.UtcNow
