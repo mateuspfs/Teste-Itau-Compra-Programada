@@ -15,5 +15,11 @@ namespace Itau.CompraProgramada.Domain.Interfaces.Generic
         IQueryable<TEntity> Where(Expression<Func<TEntity, bool>> predicate);
         Task<TEntity?> FirstOrDefaultAsync(Expression<Func<TEntity, bool>> predicate);
         Task<List<TEntity>> ToListAsync(Expression<Func<TEntity, bool>> predicate);
+        Task<(IEnumerable<TEntity> Items, int TotalCount)> GetPagedAsync<TKey>(
+            int skip, 
+            int take, 
+            Expression<Func<TEntity, TKey>> orderBy, 
+            bool descending = true,
+            Expression<Func<TEntity, bool>>? predicate = null);
     }
 }

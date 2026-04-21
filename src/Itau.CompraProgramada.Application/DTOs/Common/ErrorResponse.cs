@@ -2,14 +2,14 @@ namespace Itau.CompraProgramada.Application.DTOs.Common
 {
     public class ErrorResponse
     {
-        public string Erro { get; set; } = string.Empty;
+        public string Mensagem { get; set; } = string.Empty;
         public string Codigo { get; set; } = string.Empty;
 
         public ErrorResponse() { }
 
-        public ErrorResponse(string erro, string codigo)
+        public ErrorResponse(string mensagem, string codigo)
         {
-            Erro = erro;
+            Mensagem = mensagem;
             Codigo = codigo;
         }
     }

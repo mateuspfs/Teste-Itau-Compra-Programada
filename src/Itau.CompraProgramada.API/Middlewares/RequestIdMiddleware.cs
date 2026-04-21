@@ -4,15 +4,8 @@ using System.Threading.Tasks;
 
 namespace Itau.CompraProgramada.API.Middlewares
 {
-    public class RequestIdMiddleware
+    public class RequestIdMiddleware(RequestDelegate next)
     {
-        private readonly RequestDelegate _next;
-
-        public RequestIdMiddleware(RequestDelegate next)
-        {
-            _next = next;
-        }
-
         public async Task InvokeAsync(HttpContext context)
         {
             // Gera um novo UUID para cada requisição
@@ -31,7 +24,7 @@ namespace Itau.CompraProgramada.API.Middlewares
                 return Task.CompletedTask;
             });
 
-            await _next(context);
+            await next(context);
         }
     }
 }

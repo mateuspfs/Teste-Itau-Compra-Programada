@@ -1,13 +1,14 @@
-using System;
-using System.Linq;
-using System.Threading.Tasks;
+using Itau.CompraProgramada.Application.Common;
 using Itau.CompraProgramada.Application.DTOs.Clientes;
-using Itau.CompraProgramada.Application.Exceptions;
 using Itau.CompraProgramada.Application.Interfaces;
 using Itau.CompraProgramada.Domain.Entities;
 using Itau.CompraProgramada.Domain.Enums;
 using Itau.CompraProgramada.Domain.Interfaces.Respositories;
 using Itau.CompraProgramada.Domain.ValueObjects;
+using System;
+using System.Linq;
+using System.Security.Cryptography;
+using System.Threading.Tasks;
 
 namespace Itau.CompraProgramada.Application.Services
 {
@@ -20,18 +21,18 @@ namespace Itau.CompraProgramada.Application.Services
         ICustodiaRepository custodiaRepository,
         ICotacaoRepository cotacaoRepository) : IClienteService
     {
-        public async Task<AdesaoClienteResponse> AderirAoProdutoAsync(AdesaoClienteRequest request)
+        public async Task<Result<AdesaoClienteResponse>> AderirAoProdutoAsync(AdesaoClienteRequest request)
         {
             if (!Cpf.Validar(request.CPF))
-                throw new ValidationException("CPF informado é inválido.", "CPF_INVALIDO");
+                return Result<AdesaoClienteResponse>.Fail("CPF informado é inválido.", "CPF_INVALIDO");
 
             if (request.ValorMensal < 100)
-                throw new ValidationException("O valor mensal minímo e de R$ 100,00.", "VALOR_MENSAL_INVALIDO");
+                return Result<AdesaoClienteResponse>.Fail("O valor mensal minímo e de R$ 100,00.", "VALOR_MENSAL_INVALIDO");
 
             var cpfLimpo = new Cpf(request.CPF).Valor;
             var clienteExistente = await clienteRepository.GetByCpfAsync(cpfLimpo);
             if (clienteExistente != null)
-                throw new ValidationException("CPF já cadastrado no sistema.", "CLIENTE_CPF_DUPLICADO");
+                return Result<AdesaoClienteResponse>.Fail("CPF já cadastrado no sistema.", "CLIENTE_CPF_DUPLICADO");
 
             var cliente = new Cliente(request.Nome, request.CPF, request.Email, request.ValorMensal);
             await clienteRepository.AddAsync(cliente);
@@ -43,20 +44,7 @@ namespace Itau.CompraProgramada.Application.Services
             await contaGraficaRepository.AddAsync(contaGrafica);
             await contaGraficaRepository.SaveChangesAsync();
 
-            // RN-004: Criar a Custódia associada à Conta Gráfica Filhote (Inicialmente com 0)
-            var cestaAtiva = await cestaRepository.FirstOrDefaultAsync(c => c.Ativa);
-            if (cestaAtiva != null)
-            {
-                var itensCesta = await itemCestaRepository.GetByCestaIdAsync(cestaAtiva.Id);
-                foreach (var item in itensCesta)
-                {
-                    var custodia = new Custodia(contaGrafica.Id, item.Ticker, 0, 0);
-                    await custodiaRepository.AddAsync(custodia);
-                }
-                await custodiaRepository.SaveChangesAsync();
-            }
-
-            return new AdesaoClienteResponse
+            var response = new AdesaoClienteResponse
             {
                 ClienteId = cliente.Id,
                 Nome = cliente.Nome,
@@ -73,19 +61,24 @@ namespace Itau.CompraProgramada.Application.Services
                     DataCriacao = contaGrafica.DataCriacao
                 }
             };
+
+            return Result<AdesaoClienteResponse>.Success(response);
         }
 
-        public async Task<SaidaProdutoResponse> SairDoProdutoAsync(long clienteId)
+        public async Task<Result<SaidaProdutoResponse>> SairDoProdutoAsync(long clienteId)
         {
-            var cliente = await clienteRepository.GetByIdAsync(clienteId) ?? throw new NotFoundException("Cliente não encontrado.", "CLIENTE_NAO_ENCONTRADO");
+            var cliente = await clienteRepository.GetByIdAsync(clienteId);
+            
+            if (cliente == null)
+                return Result<SaidaProdutoResponse>.NotFound("Cliente não encontrado.", "CLIENTE_NAO_ENCONTRADO");
             
             if (!cliente.Ativo)
-                throw new ValidationException("Cliente já havia saído do produto.", "CLIENTE_JA_INATIVO");
+                return Result<SaidaProdutoResponse>.Fail("Cliente já havia saído do produto.", "CLIENTE_JA_INATIVO");
 
             cliente.Desativar();
             await clienteRepository.SaveChangesAsync();
 
-            return new SaidaProdutoResponse
+            var response = new SaidaProdutoResponse
             {
                 ClienteId = cliente.Id,
                 Nome = cliente.Nome,
@@ -93,14 +86,19 @@ namespace Itau.CompraProgramada.Application.Services
                 DataSaida = DateTime.UtcNow,
                 Mensagem = "Saída do produto realizada com sucesso."
             };
+
+            return Result<SaidaProdutoResponse>.Success(response);
         }
 
-        public async Task<AlterarValorMensalResponse> AlterarValorMensalAsync(long clienteId, AlterarValorMensalRequest request)
+        public async Task<Result<AlterarValorMensalResponse>> AlterarValorMensalAsync(long clienteId, AlterarValorMensalRequest request)
         {
-            var cliente = await clienteRepository.GetByIdAsync(clienteId) ?? throw new NotFoundException("Cliente não encontrado.", "CLIENTE_NAO_ENCONTRADO");
+            var cliente = await clienteRepository.GetByIdAsync(clienteId);
+            
+            if (cliente == null)
+                return Result<AlterarValorMensalResponse>.NotFound("Cliente não encontrado.", "CLIENTE_NAO_ENCONTRADO");
             
             if (request.NovoValorMensal < 100)
-                throw new ValidationException("O valor mensal minímo e de R$ 100,00.", "VALOR_MENSAL_INVALIDO");
+                return Result<AlterarValorMensalResponse>.Fail("O valor mensal minímo e de R$ 100,00.", "VALOR_MENSAL_INVALIDO");
             
             var valorAnterior = cliente.ValorMensal;
             
@@ -111,7 +109,7 @@ namespace Itau.CompraProgramada.Application.Services
             cliente.AlterarValorMensal(request.NovoValorMensal);
             await clienteRepository.SaveChangesAsync();
 
-            return new AlterarValorMensalResponse
+            var response = new AlterarValorMensalResponse
             {
                 ClienteId = cliente.Id,
                 ValorMensalAnterior = valorAnterior,
@@ -119,18 +117,22 @@ namespace Itau.CompraProgramada.Application.Services
                 DataAlteracao = DateTime.UtcNow,
                 Mensagem = "Valor mensal atualizado. O novo valor será considerado a partir da próxima data de compra."
             };
+
+            return Result<AlterarValorMensalResponse>.Success(response);
         }
 
-        public async Task<RentabilidadeResponse> ObterRentabilidadeAsync(long clienteId)
+        public async Task<Result<RentabilidadeResponse>> ObterRentabilidadeAsync(long clienteId)
         {
-            var cliente = await clienteRepository.GetByIdAsync(clienteId) 
-                ?? throw new NotFoundException("Cliente não encontrado.", "CLIENTE_NAO_ENCONTRADO");
+            var cliente = await clienteRepository.GetByIdAsync(clienteId);
+            
+            if (cliente == null)
+                return Result<RentabilidadeResponse>.NotFound("Cliente não encontrado.", "CLIENTE_NAO_ENCONTRADO");
 
             var todasContas = await contaGraficaRepository.GetAllAsync();
             var conta = todasContas.FirstOrDefault(c => c.ClienteId == clienteId && c.Tipo == ContaTipo.FILHOTE);
 
             if (conta == null)
-                throw new NotFoundException("Conta gráfica não encontrada para este cliente.", "CONTA_NAO_ENCONTRADA");
+                return Result<RentabilidadeResponse>.NotFound("Conta gráfica não encontrada para este cliente.", "CONTA_NAO_ENCONTRADA");
 
             var custodias = await custodiaRepository.GetByContaGraficaIdAsync(conta.Id);
             decimal valorInvestidoTotal = 0;
@@ -159,21 +161,102 @@ namespace Itau.CompraProgramada.Application.Services
                 }
             };
 
-            // Para fins de demonstração do contrato (RN-063 a RN-070), retornamos dados mockados de histórico
-            // Em aplicação real, isso viria de tabelas de histórico diário.
-            response.HistoricoAportes = new List<HistoricoAporteDTO>
+            // RN-020: Próximos aportes (05, 15 e 25) a partir de hoje
+            var hoje = DateTime.UtcNow;
+            var proximos = new List<HistoricoAporteDTO>();
+            int[] diasAlvo = [5, 15, 25];
+            DateTime dataRef = new(hoje.Year, hoje.Month, 1, 0, 0, 0, DateTimeKind.Utc);
+            int encontrados = 0;
+
+            while (encontrados < 3)
             {
-                new() { Data = DateTime.UtcNow.AddMonths(-1).AddDays(5), Valor = cliente.ValorMensal / 3, Parcela = "1/3" },
-                new() { Data = DateTime.UtcNow.AddMonths(-1).AddDays(15), Valor = cliente.ValorMensal / 3, Parcela = "2/3" },
-                new() { Data = DateTime.UtcNow.AddMonths(-1).AddDays(25), Valor = cliente.ValorMensal / 3, Parcela = "3/3" }
-            };
+                foreach (var dia in diasAlvo)
+                {
+                    var dataAporte = new DateTime(dataRef.Year, dataRef.Month, dia).AddHours(12);
+                    if (dataAporte > hoje && encontrados < 3)
+                    {
+                        proximos.Add(new HistoricoAporteDTO
+                        {
+                            Data = dataAporte,
+                            Valor = cliente.ValorMensal / 3,
+                            Parcela = $"{(dia == 5 ? "1" : dia == 15 ? "2" : "3")}/3"
+                        });
+                        encontrados++;
+                    }
+                }
+                dataRef = dataRef.AddMonths(1);
+            }
+
+            response.HistoricoAportes = proximos;
 
             response.EvolucaoCarteira = new List<EvolucaoCarteiraDTO>
             {
                 new() { Data = DateTime.UtcNow.AddMonths(-1).AddDays(25), ValorInvestido = valorInvestidoTotal, ValorCarteira = valorAtualTotal, Rentabilidade = response.Rentabilidade.RentabilidadePercentual }
             };
 
-            return response;
+            return Result<RentabilidadeResponse>.Success(response);
+        }
+
+        public async Task<Result<ResultadoPaginado<AdesaoClienteResponse>>> ObterTodosPaginaAsync(int pagina, int tamanhoPagina, bool ordemDesc = true)
+        {
+            var skip = (pagina - 1) * tamanhoPagina;
+            var (clientes, totalRegistros) = await clienteRepository.GetPagedAsync(skip, tamanhoPagina, c => c.Id, ordemDesc);
+            
+            var todasContas = await contaGraficaRepository.GetAllAsync();
+
+            var responseItems = clientes.Select(cliente =>
+            {
+                var conta = todasContas.FirstOrDefault(c => c.ClienteId == cliente.Id && c.Tipo == ContaTipo.FILHOTE);
+                return new AdesaoClienteResponse
+                {
+                    ClienteId = cliente.Id,
+                    Nome = cliente.Nome,
+                    CPF = cliente.CPF,
+                    Email = cliente.Email,
+                    ValorMensal = cliente.ValorMensal,
+                    Ativo = cliente.Ativo,
+                    DataAdesao = cliente.DataAdesao,
+                    ContaGrafica = conta != null ? new ContaGraficaDTO
+                    {
+                        Id = conta.Id,
+                        NumeroConta = conta.NumeroConta,
+                        Tipo = conta.Tipo.ToString(),
+                        DataCriacao = conta.DataCriacao
+                    } : null!
+                };
+            }).ToList();
+
+            var resultado = new ResultadoPaginado<AdesaoClienteResponse>(responseItems, totalRegistros, pagina, tamanhoPagina);
+            return Result<ResultadoPaginado<AdesaoClienteResponse>>.Success(resultado);
+        }
+
+        public async Task<Result<ClienteResumoResponse>> ObterResumoDashboardAsync()
+        {
+            var data = await clienteRepository.ObterResumoAsync();
+            var resUltimos = await ObterTodosPaginaAsync(1, 5, true);
+            
+            var resumo = new ClienteResumoResponse
+            {
+                TotalAtivos = data.TotalAtivos,
+                TotalValorMensal = data.TotalValorMensal,
+                TotalResiduoMaster = data.ValorResiduoMaster,
+                UltimosClientes = resUltimos.Data?.Itens.Select(c => new UltimoClienteDashboardDTO
+                {
+                    ClienteId = c.ClienteId,
+                    Nome = c.Nome,
+                    Email = c.Email,
+                    ValorMensal = c.ValorMensal,
+                    NumeroConta = c.ContaGrafica?.NumeroConta
+                }).ToList() ?? [],
+                ItensMaster = data.ItensMaster.Select(i => new ItemCustodiaMasterResumoDTO
+                {
+                    Ticker = i.Ticker,
+                    Quantidade = i.Quantidade,
+                    ValorAtual = i.ValorAtual
+                }).ToList() ?? [],
+            };
+
+            return Result<ClienteResumoResponse>.Success(resumo);
         }
     }
 }

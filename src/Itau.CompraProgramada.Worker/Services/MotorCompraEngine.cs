@@ -155,6 +155,8 @@ namespace Itau.CompraProgramada.Worker.Services
         {
             var ordens = new List<OrdemCompra>();
 
+            if (quantidade <= 0) return ordens;
+
             // RN-031 e RN-032: Separação entre mercado de lote padrão (>=100) e fracionário
             int lotes = (quantidade / 100) * 100;
             int fracionario = quantidade % 100;

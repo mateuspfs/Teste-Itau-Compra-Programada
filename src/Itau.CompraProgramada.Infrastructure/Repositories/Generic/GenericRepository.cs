@@ -60,5 +60,26 @@ namespace Itau.CompraProgramada.Infrastructure.Repositories.Generic
         {
             return await _dbSet.Where(predicate).ToListAsync();
         }
+
+        public async Task<(IEnumerable<T> Items, int TotalCount)> GetPagedAsync<TKey>(
+            int skip, 
+            int take, 
+            Expression<Func<T, TKey>> orderBy, 
+            bool descending = true,
+            Expression<Func<T, bool>>? predicate = null)
+        {
+            var query = predicate != null ? _dbSet.Where(predicate) : _dbSet;
+            
+            var totalCount = await query.CountAsync();
+            
+            var orderedQuery = descending ? query.OrderByDescending(orderBy) : query.OrderBy(orderBy);
+            
+            var items = await orderedQuery
+                .Skip(skip)
+                .Take(take)
+                .ToListAsync();
+                
+            return (items, totalCount);
+        }
     }
 }

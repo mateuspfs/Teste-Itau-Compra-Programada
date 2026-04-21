@@ -1,11 +1,6 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+using Itau.CompraProgramada.Application.Common;
 using Itau.CompraProgramada.Application.DTOs.Clientes;
-using Itau.CompraProgramada.Application.Exceptions;
 using Itau.CompraProgramada.Application.Interfaces;
-using Itau.CompraProgramada.Domain.Entities;
 using Itau.CompraProgramada.Domain.Enums;
 using Itau.CompraProgramada.Domain.Interfaces.Respositories;
 
@@ -17,16 +12,18 @@ namespace Itau.CompraProgramada.Application.Services
         ICustodiaRepository custodiaRepository,
         ICotacaoRepository cotacaoRepository) : ICarteiraService
     {
-        public async Task<CarteiraResponse> ObterCarteiraPorClienteAsync(long clienteId)
+        public async Task<Result<CarteiraResponse>> ObterCarteiraPorClienteAsync(long clienteId)
         {
-            var cliente = await clienteRepository.GetByIdAsync(clienteId) 
-                ?? throw new NotFoundException("Cliente não encontrado.", "CLIENTE_NAO_ENCONTRADO");
+            var cliente = await clienteRepository.GetByIdAsync(clienteId);
+            
+            if (cliente == null)
+                return Result<CarteiraResponse>.NotFound("Cliente não encontrado.", "CLIENTE_NAO_ENCONTRADO");
 
             var contas = await contaGraficaRepository.GetAllAsync();
             var conta = contas.FirstOrDefault(c => c.ClienteId == clienteId && c.Tipo == ContaTipo.FILHOTE);
 
             if (conta == null)
-                throw new NotFoundException("Conta gráfica não encontrada para este cliente.", "CONTA_NAO_ENCONTRADA");
+                return Result<CarteiraResponse>.NotFound("Conta gráfica não encontrada para este cliente.", "CONTA_NAO_ENCONTRADA");
 
             var custodias = await custodiaRepository.GetByContaGraficaIdAsync(conta.Id);
             
@@ -80,8 +77,8 @@ namespace Itau.CompraProgramada.Application.Services
                     ativo.ComposicaoCarteira = (ativo.ValorAtual / valorAtualCarteira) * 100;
                 }
             }
-
-            return response;
+            
+            return Result<CarteiraResponse>.Success(response);
         }
     }
 }

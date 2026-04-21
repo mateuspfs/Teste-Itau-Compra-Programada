@@ -2,8 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Itau.CompraProgramada.Application.Common;
 using Itau.CompraProgramada.Application.DTOs.Admin;
-using Itau.CompraProgramada.Application.Exceptions;
 using Itau.CompraProgramada.Application.Interfaces;
 using Itau.CompraProgramada.Domain.Entities;
 using Itau.CompraProgramada.Domain.Interfaces.Respositories;
@@ -18,17 +18,17 @@ namespace Itau.CompraProgramada.Application.Services
         ICustodiaRepository custodiaRepository,
         ICotacaoRepository cotacaoRepository) : IAdminService
     {
-        public async Task<CestaCadastroResponse> CadastrarAlterarCestaAsync(CestaRequest request)
+        public async Task<Result<CestaCadastroResponse>> CadastrarAlterarCestaAsync(CestaRequest request)
         {
             if (request.Itens.Count != 5)
-                throw new ValidationException($"A cesta deve conter exatamente 5 ativos. Quantidade informada: {request.Itens.Count}.", "QUANTIDADE_ATIVOS_INVALIDA");
+                return Result<CestaCadastroResponse>.Fail($"A cesta deve conter exatamente 5 ativos. Quantidade informada: {request.Itens.Count}.", "QUANTIDADE_ATIVOS_INVALIDA");
 
             var somaPercentuais = request.Itens.Sum(i => i.Percentual);
             if (somaPercentuais != 100)
-                throw new ValidationException($"A soma dos percentuais deve ser exatamente 100%. Soma atual: {somaPercentuais}%.", "PERCENTUAIS_INVALIDOS");
+                return Result<CestaCadastroResponse>.Fail($"A soma dos percentuais deve ser exatamente 100%. Soma atual: {somaPercentuais}%.", "PERCENTUAIS_INVALIDOS");
 
             if (request.Itens.Any(i => i.Percentual <= 0))
-                throw new ValidationException("Cada ativo na cesta deve ter um percentual maior que 0%.", "PERCENTUAL_POSITIVO_REQUERIDO");
+                return Result<CestaCadastroResponse>.Fail("Cada ativo na cesta deve ter um percentual maior que 0%.", "PERCENTUAL_POSITIVO_REQUERIDO");
 
             var cestaAtual = await cestaRepository.FirstOrDefaultAsync(c => c.Ativa);
             CestaResumoDTO? resumoAnterior = null;
@@ -93,18 +93,18 @@ namespace Itau.CompraProgramada.Application.Services
                 await rebalanceamentoService.ProcessarRebalanceamentoPorMudancaCestaAsync(resumoAnterior.CestaId, novaCesta.Id);
             }
 
-            return response;
+            return Result<CestaCadastroResponse>.Success(response);
         }
 
-        public async Task<CestaDetalhesResponse> ObterCestaAtualAsync()
+        public async Task<Result<CestaDetalhesResponse>> ObterCestaAtualAsync()
         {
             var cesta = await cestaRepository.FirstOrDefaultAsync(c => c.Ativa);
             if (cesta == null)
-                throw new NotFoundException("Nenhuma cesta ativa encontrada.", "CESTA_NAO_ENCONTRADA");
+                return Result<CestaDetalhesResponse>.NotFound("Nenhuma cesta ativa encontrada.", "CESTA_NAO_ENCONTRADA");
 
             var itens = await itemCestaRepository.GetByCestaIdAsync(cesta.Id);
             
-            return new CestaDetalhesResponse
+            var detalhes = new CestaDetalhesResponse
             {
                 CestaId = cesta.Id,
                 Nome = cesta.Nome,
@@ -117,9 +117,11 @@ namespace Itau.CompraProgramada.Application.Services
                     CotacaoAtual = null
                 }).ToList()
             };
+
+            return Result<CestaDetalhesResponse>.Success(detalhes);
         }
 
-        public async Task<IEnumerable<CestaHistoricoResponse>> ObterHistoricoCestasAsync()
+        public async Task<Result<IEnumerable<CestaHistoricoResponse>>> ObterHistoricoCestasAsync()
         {
             var cestas = await cestaRepository.GetHistoricoAsync();
             var responses = new List<CestaHistoricoResponse>();
@@ -138,14 +140,16 @@ namespace Itau.CompraProgramada.Application.Services
                 });
             }
 
-            return responses;
+            return Result<IEnumerable<CestaHistoricoResponse>>.Success(responses);
         }
 
-        public async Task<CustodiaMasterResponse> ObterCustodiaMasterAsync()
+        public async Task<Result<CustodiaMasterResponse>> ObterCustodiaMasterAsync()
         {
             var todasContas = await contaGraficaRepository.GetAllAsync();
-            var contaMaster = todasContas.FirstOrDefault(c => c.Tipo == Itau.CompraProgramada.Domain.Enums.ContaTipo.MASTER)
-                ?? throw new NotFoundException("Conta Master não encontrada.", "CONTA_MASTER_NAO_ENCONTRADA");
+            var contaMaster = todasContas.FirstOrDefault(c => c.Tipo == Itau.CompraProgramada.Domain.Enums.ContaTipo.MASTER);
+            
+            if (contaMaster == null)
+                return Result<CustodiaMasterResponse>.NotFound("Conta Master não encontrada.", "CONTA_MASTER_NAO_ENCONTRADA");
 
             var custodias = await custodiaRepository.GetByContaGraficaIdAsync(contaMaster.Id);
             
@@ -182,7 +186,7 @@ namespace Itau.CompraProgramada.Application.Services
 
             response.ValorTotalResiduo = valorTotalResiduo;
 
-            return response;
+            return Result<CustodiaMasterResponse>.Success(response);
         }
     }
 }

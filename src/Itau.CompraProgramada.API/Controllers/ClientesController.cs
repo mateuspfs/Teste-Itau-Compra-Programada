@@ -1,5 +1,6 @@
 using Itau.CompraProgramada.Application.DTOs.Clientes;
 using Itau.CompraProgramada.Application.Interfaces;
+using Itau.CompraProgramada.Application.Common;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
 
@@ -10,21 +11,37 @@ namespace Itau.CompraProgramada.API.Controllers
     [SwaggerTag("Gerenciamento de Clientes e Adesões ao Produto")]
     public class ClientesController(
         IClienteService clienteService,
-        ICarteiraService carteiraService) : ControllerBase
+        ICarteiraService carteiraService) : BaseController
     {
-        /// <summary>
-        /// Consulta a carteira de ações de um cliente.
-        /// </summary>
-        /// <param name="clienteId">ID do cliente.</param>
-        /// <returns>Dados da custódia atual do cliente.</returns>
         [HttpGet("{clienteId}/carteira")]
         [SwaggerOperation(Summary = "Obter carteira do cliente", Description = "Retorna a lista de ativos e quantidades que o cliente possui atualmente.")]
         [SwaggerResponse(200, "Carteira retornada com sucesso", typeof(CarteiraResponse))]
         [SwaggerResponse(404, "Cliente não encontrado")]
         public async Task<IActionResult> ObterCarteira(long clienteId)
         {
-            var response = await carteiraService.ObterCarteiraPorClienteAsync(clienteId);
-            return Ok(response);
+            return ProcessResult(await carteiraService.ObterCarteiraPorClienteAsync(clienteId));
+        }
+
+        /// <summary>
+        /// Lista todos os clientes cadastrados com paginação.
+        /// </summary>
+        [HttpGet]
+        [SwaggerOperation(Summary = "Listar clientes paginado", Description = "Retorna os clientes cadastrados no sistema com suporte a paginação e ordenação.")]
+        [SwaggerResponse(200, "Lista de clientes retornada com sucesso", typeof(ResultadoPaginado<AdesaoClienteResponse>))]
+        public async Task<IActionResult> ObterTodos([FromQuery] int pagina = 1, [FromQuery] int tamanhoPagina = 10, [FromQuery] bool ordemDesc = true)
+        {
+            return ProcessResult(await clienteService.ObterTodosPaginaAsync(pagina, tamanhoPagina, ordemDesc));
+        }
+
+        /// <summary>
+        /// Obtém o resumo de clientes para o dashboard.
+        /// </summary>
+        [HttpGet("resumo")]
+        [SwaggerOperation(Summary = "Resumo de clientes", Description = "Retorna métricas consolidadas de clientes para o dashboard.")]
+        [SwaggerResponse(200, "Resumo retornado com sucesso", typeof(ClienteResumoResponse))]
+        public async Task<IActionResult> ObterResumo()
+        {
+            return ProcessResult(await clienteService.ObterResumoDashboardAsync());
         }
 
         /// <summary>
@@ -38,8 +55,12 @@ namespace Itau.CompraProgramada.API.Controllers
         [SwaggerResponse(400, "Dados de entrada inválidos")]
         public async Task<IActionResult> AderirAoProduto([FromBody] AdesaoClienteRequest request)
         {
-            var response = await clienteService.AderirAoProdutoAsync(request);
-            return CreatedAtAction(nameof(AderirAoProduto), new { clienteId = response.ClienteId }, response);
+            var result = await clienteService.AderirAoProdutoAsync(request);
+            if (result.IsSuccess)
+            {
+                return CreatedAtAction(nameof(AderirAoProduto), new { clienteId = result.Data!.ClienteId }, result.Data);
+            }
+            return ProcessResult(result);
         }
 
         /// <summary>
@@ -53,8 +74,7 @@ namespace Itau.CompraProgramada.API.Controllers
         [SwaggerResponse(404, "Cliente não encontrado")]
         public async Task<IActionResult> SairDoProduto(long clienteId)
         {
-            var response = await clienteService.SairDoProdutoAsync(clienteId);
-            return Ok(response);
+            return ProcessResult(await clienteService.SairDoProdutoAsync(clienteId));
         }
 
         /// <summary>
@@ -69,8 +89,7 @@ namespace Itau.CompraProgramada.API.Controllers
         [SwaggerResponse(400, "Valor inválido")]
         public async Task<IActionResult> AlterarValorMensal(long clienteId, [FromBody] AlterarValorMensalRequest request)
         {
-            var response = await clienteService.AlterarValorMensalAsync(clienteId, request);
-            return Ok(response);
+            return ProcessResult(await clienteService.AlterarValorMensalAsync(clienteId, request));
         }
 
         /// <summary>
@@ -84,8 +103,7 @@ namespace Itau.CompraProgramada.API.Controllers
         [SwaggerResponse(404, "Cliente não encontrado")]
         public async Task<IActionResult> ObterRentabilidade(long clienteId)
         {
-            var response = await clienteService.ObterRentabilidadeAsync(clienteId);
-            return Ok(response);
+            return ProcessResult(await clienteService.ObterRentabilidadeAsync(clienteId));
         }
     }
 }

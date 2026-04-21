@@ -8,7 +8,7 @@ namespace Itau.CompraProgramada.API.Controllers
     [ApiController]
     [Route("api/[controller]")]
     [SwaggerTag("Operações Administrativas e Gestão de Carteiras Recomendadas")]
-    public class AdminController(IAdminService adminService) : ControllerBase
+    public class AdminController(IAdminService adminService) : BaseController
     {
         /// <summary>
         /// Cadastra ou atualiza uma cesta recomendada de ativos.
@@ -21,8 +21,12 @@ namespace Itau.CompraProgramada.API.Controllers
         [SwaggerResponse(400, "Soma dos pesos diferente de 100%")]
         public async Task<IActionResult> CadastrarAlterarCesta([FromBody] CestaRequest request)
         {
-            var response = await adminService.CadastrarAlterarCestaAsync(request);
-            return CreatedAtAction(nameof(CadastrarAlterarCesta), new { cestaId = response.CestaId }, response);
+            var result = await adminService.CadastrarAlterarCestaAsync(request);
+            if (result.IsSuccess)
+            {
+                return CreatedAtAction(nameof(CadastrarAlterarCesta), new { cestaId = result.Data!.CestaId }, result.Data);
+            }
+            return ProcessResult(result);
         }
 
         /// <summary>
@@ -34,8 +38,7 @@ namespace Itau.CompraProgramada.API.Controllers
         [SwaggerResponse(200, "Cesta retornada com sucesso", typeof(CestaDetalhesResponse))]
         public async Task<IActionResult> ObterCestaAtual()
         {
-            var response = await adminService.ObterCestaAtualAsync();
-            return Ok(response);
+            return ProcessResult(await adminService.ObterCestaAtualAsync());
         }
 
         /// <summary>
@@ -47,8 +50,12 @@ namespace Itau.CompraProgramada.API.Controllers
         [SwaggerResponse(200, "Histórico retornado com sucesso", typeof(IEnumerable<CestaHistoricoResponse>))]
         public async Task<IActionResult> ObterHistoricoCestas()
         {
-            var response = await adminService.ObterHistoricoCestasAsync();
-            return Ok(new { cestas = response });
+            var result = await adminService.ObterHistoricoCestasAsync();
+            if (result.IsSuccess)
+            {
+                return Ok(new { cestas = result.Data });
+            }
+            return ProcessResult(result);
         }
 
         /// <summary>
@@ -60,8 +67,7 @@ namespace Itau.CompraProgramada.API.Controllers
         [SwaggerResponse(200, "Custódia master retornada com sucesso", typeof(CustodiaMasterResponse))]
         public async Task<IActionResult> ObterCustodiaMaster()
         {
-            var response = await adminService.ObterCustodiaMasterAsync();
-            return Ok(response);
+            return ProcessResult(await adminService.ObterCustodiaMasterAsync());
         }
     }
 }

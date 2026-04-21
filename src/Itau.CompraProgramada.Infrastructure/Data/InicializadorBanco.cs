@@ -31,6 +31,7 @@ namespace Itau.CompraProgramada.Infrastructure.Data
                 await LogAsync("Information", "Banco de dados inicializado/migrado com sucesso.");
 
                 await SeedMasterDataAsync();
+                await SeedClientesAsync();
                 await SeedCotacoesAsync();
 
                 await LogAsync("Information", "Inicialização do banco de dados concluída com sucesso.");
@@ -41,6 +42,40 @@ namespace Itau.CompraProgramada.Infrastructure.Data
                 await LogAsync("Error", "Erro durante a inicialização do banco de dados", ex.ToString());
                 logger.LogError(ex, "Erro ao inicializar o banco.");
                 throw;
+            }
+        }
+
+        private async Task SeedClientesAsync()
+        {
+            var possuiClientes = await context.Clientes.AnyAsync(c => c.ValorMensal > 0);
+            if (!possuiClientes)
+            {
+                logger.LogInformation("Gerando 30 clientes de teste...");
+                var random = new Random();
+                
+                for (int i = 1; i <= 30; i++)
+                {
+                    var cpf = CpfUtils.GerarCpfRelativo(i + 100); 
+                    var valorMensal = (decimal)random.Next(100, 5001);
+                    
+                    var cliente = new Cliente(
+                        $"Cliente Seed {i:D2}",
+                        cpf,
+                        $"cliente{i:D2}@teste.com.br",
+                        valorMensal
+                    );
+
+                    cliente.GetType().GetProperty("DataAdesao")?.SetValue(cliente, DateTime.UtcNow.AddDays(-random.Next(0, 60)));
+
+                    await context.Clientes.AddAsync(cliente);
+                    await context.SaveChangesAsync();
+
+                    var conta = new ContaGrafica(cliente.Id, $"FLH-{cliente.Id:D6}", ContaTipo.FILHOTE);
+                    await context.ContasGraficas.AddAsync(conta);
+                }
+
+                await context.SaveChangesAsync();
+                await LogAsync("Information", "30 clientes de teste gerados com sucesso.");
             }
         }
 

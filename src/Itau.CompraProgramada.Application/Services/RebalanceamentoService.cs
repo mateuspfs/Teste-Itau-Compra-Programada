@@ -21,21 +21,18 @@ namespace Itau.CompraProgramada.Application.Services
         public async Task ProcessarRebalanceamentoPorMudancaCestaAsync(long cestaAnteriorId, long novaCestaId)
         {
             var clientesAtivos = await clienteRepository.GetAtivosAsync();
-            var itensAntigos = await itemCestaRepository.GetByCestaIdAsync(cestaAnteriorId);
             var itensNovos = await itemCestaRepository.GetByCestaIdAsync(novaCestaId);
 
             foreach (var cliente in clientesAtivos)
             {
-                await RebalancearClienteAsync(cliente, itensAntigos, itensNovos);
+                await RebalancearClienteAsync(cliente, itensNovos);
                 await irService.ProcessarIRVendaMensalAsync(cliente.Id, DateTime.UtcNow.Month, DateTime.UtcNow.Year);
             }
         }
 
-        private async Task RebalancearClienteAsync(Cliente cliente, IEnumerable<ItemCesta> itensAntigos, IEnumerable<ItemCesta> itensNovos)
+        private async Task RebalancearClienteAsync(Cliente cliente, IEnumerable<ItemCesta> itensNovos)
         {
-            var contas = await contaGraficaRepository.GetAllAsync();
-            var conta = contas.FirstOrDefault(c => c.ClienteId == cliente.Id && c.Tipo == ContaTipo.FILHOTE);
-
+            var conta = await contaGraficaRepository.FirstOrDefaultAsync(c => c.ClienteId == cliente.Id && c.Tipo == ContaTipo.FILHOTE);
             if (conta == null) return;
 
             var custodiasAtuais = (await custodiaRepository.GetByContaGraficaIdAsync(conta.Id)).ToList();
