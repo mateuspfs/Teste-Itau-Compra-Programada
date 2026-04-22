@@ -12,7 +12,6 @@ import {
   Th,
   Td,
   Loading,
-  ErrorMessage,
   Button,
   Input,
 } from '../../components';
@@ -22,7 +21,6 @@ import { PlusIcon, TrashIcon } from '@heroicons/react/24/outline';
 
 export default function CestaConfig() {
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [cestaAtual, setCestaAtual] = useState<CestaDto | null>(null);
   const [historico, setHistorico] = useState<CestaDto[]>([]);
   
@@ -46,7 +44,7 @@ export default function CestaConfig() {
         setHistorico(resHist.data.cestas);
       }
     } catch (err) {
-      setError('Erro ao carregar dados da cesta');
+      swal.errorToast('Erro ao carregar dados da cesta');
     } finally {
       setLoading(false);
     }

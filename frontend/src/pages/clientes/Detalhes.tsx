@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { clientesApi } from '../../services/api';
-import type { ClienteDto, CarteiraDto, RentabilidadeDto } from '../../types/api';
+import type { CarteiraDto, RentabilidadeDto } from '../../types/api';
 import { formatarMoeda, formatarDataBr } from '../../helpers/masks';
 import {
   Container,

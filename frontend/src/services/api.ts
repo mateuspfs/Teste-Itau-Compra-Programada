@@ -6,7 +6,9 @@ import type {
   RentabilidadeDto, 
   CestaDto, 
   CestaItemDto, 
-  CustodiaMasterDto 
+  CustodiaMasterDto,
+  ResultadoPaginado,
+  ClienteResumoDto
 } from '../types/api';
 
 // Configuração base do cliente HTTP para comunicação com a API

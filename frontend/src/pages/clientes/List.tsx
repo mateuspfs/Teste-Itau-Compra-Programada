@@ -16,9 +16,7 @@ import {
   Td,
   Loading,
   ErrorMessage,
-  ColoredText,
 } from '../../components';
-import { swal } from '../../utils/swal';
 
 // Página de listagem de clientes
 export default function ClientesList() {
