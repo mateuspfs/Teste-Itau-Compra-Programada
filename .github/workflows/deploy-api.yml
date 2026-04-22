@@ -24,7 +24,7 @@ jobs:
           dotnet-version: '9.0.x'
 
       - name: Restore dependencies
-        run: dotnet restore
+        run: dotnet restore src/Itau.CompraProgramada.sln
 
       - name: Run Unit Tests
         run: dotnet test tests/Itau.CompraProgramada.Tests.Unit/Itau.CompraProgramada.Tests.Unit.csproj --no-restore --verbosity normal
