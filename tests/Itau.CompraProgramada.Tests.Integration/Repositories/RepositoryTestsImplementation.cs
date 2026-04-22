@@ -84,7 +84,7 @@ namespace Itau.CompraProgramada.Tests.Integration.Repositories
             _clienteId = cliente.Id;
         }
 
-        protected override ContaGrafica CreateTestEntity() => new(_clienteId, "12345-6", Domain.Enums.ContaTipo.MASTER);
+        protected override ContaGrafica CreateTestEntity() => new(_clienteId, "12345-6", Domain.Enums.ContaTipo.FILHOTE);
         protected override void UpdateEntity(ContaGrafica entity) => typeof(ContaGrafica).GetProperty("NumeroConta")?.SetValue(entity, "99999-1");
         protected override void VerifyUpdate(ContaGrafica entity) => entity.NumeroConta.Should().Be("99999-1");
         protected override Type GetRepositoryType() => typeof(ContaGraficaRepository);
@@ -99,7 +99,7 @@ namespace Itau.CompraProgramada.Tests.Integration.Repositories
             var cliente = new Cliente("Teste Cust", CpfUtils.GerarCpfRelativo(400), "teste@cust.com", 1000);
             Context.Clientes.Add(cliente);
             await Context.SaveChangesAsync();
-            var conta = new ContaGrafica(cliente.Id, "11111-1", Domain.Enums.ContaTipo.MASTER);
+            var conta = new ContaGrafica(cliente.Id, "11111-1", Domain.Enums.ContaTipo.FILHOTE);
             Context.ContasGraficas.Add(conta);
             await Context.SaveChangesAsync();
             _contaId = conta.Id;
@@ -162,10 +162,10 @@ namespace Itau.CompraProgramada.Tests.Integration.Repositories
         private long _contaId;
         protected override async Task PrepareDependenciesAsync()
         {
-            var cliente = new Cliente("ITA CORRETORA MASTER", CpfUtils.GerarCpfRelativo(600), "teste@ordem.com", 1000);
+            var cliente = new Cliente("CLIENTE TESTE ORDEM", CpfUtils.GerarCpfRelativo(600), "teste@ordem.com", 1000);
             Context.Clientes.Add(cliente);
             await Context.SaveChangesAsync();
-            var conta = new ContaGrafica(cliente.Id, "99991-9", Domain.Enums.ContaTipo.MASTER);
+            var conta = new ContaGrafica(cliente.Id, "99992-1", Domain.Enums.ContaTipo.FILHOTE);
             Context.ContasGraficas.Add(conta);
             await Context.SaveChangesAsync();
             _contaId = conta.Id;

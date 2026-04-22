@@ -39,14 +39,15 @@ namespace Itau.CompraProgramada.Tests.Unit.Application
             _clienteRepoMock.Setup(r => r.GetByIdAsync(It.IsAny<long>())).ReturnsAsync((Cliente)null);
 
             // Act
-            var act = async () => await _service.ObterCarteiraPorClienteAsync(1);
-
+            var result = await _service.ObterCarteiraPorClienteAsync(1);
+            
             // Assert
-            await act.Should().ThrowAsync<NotFoundException>();
+            result.IsSuccess.Should().BeFalse();
+            result.StatusCode.Should().Be(System.Net.HttpStatusCode.NotFound);
         }
 
         [Fact]
-        public async Task ObterCarteira_DeveLancarNotFound_QuandoContaFilhoteNaoExiste()
+        public async Task ObterCarteira_DeveRetornarNotFound_QuandoContaFilhoteNaoExiste()
         {
             // Arrange
             var cliente = new Cliente("Joao", "12345678909", "joao@teste.com", 1000).SetId(1);
@@ -54,10 +55,11 @@ namespace Itau.CompraProgramada.Tests.Unit.Application
             _contaRepoMock.Setup(r => r.GetAllAsync()).ReturnsAsync(new List<ContaGrafica>());
 
             // Act
-            var act = async () => await _service.ObterCarteiraPorClienteAsync(1);
+            var result = await _service.ObterCarteiraPorClienteAsync(1);
 
             // Assert
-            await act.Should().ThrowAsync<NotFoundException>();
+            result.IsSuccess.Should().BeFalse();
+            result.StatusCode.Should().Be(System.Net.HttpStatusCode.NotFound);
         }
 
         [Fact]
@@ -85,14 +87,14 @@ namespace Itau.CompraProgramada.Tests.Unit.Application
             var result = await _service.ObterCarteiraPorClienteAsync(clienteId);
 
             // Assert
-            result.Should().NotBeNull();
-            result.Resumo.ValorTotalInvestido.Should().Be(300);
-            result.Resumo.ValorAtualCarteira.Should().Be(350);
-            result.Resumo.PLTotal.Should().Be(50);
-            result.Resumo.RentabilidadePercentual.Should().BeApproximately(16.66m, 0.01m);
-            result.Ativos.Should().HaveCount(1);
-            result.Ativos[0].Ticker.Should().Be("ITUB4");
-            result.Ativos[0].ComposicaoCarteira.Should().Be(100);
+            result.Data.Should().NotBeNull();
+            result.Data.Resumo.ValorTotalInvestido.Should().Be(300);
+            result.Data.Resumo.ValorAtualCarteira.Should().Be(350);
+            result.Data.Resumo.PLTotal.Should().Be(50);
+            result.Data.Resumo.RentabilidadePercentual.Should().BeApproximately(16.66m, 0.01m);
+            result.Data.Ativos.Should().HaveCount(1);
+            result.Data.Ativos[0].Ticker.Should().Be("ITUB4");
+            result.Data.Ativos[0].ComposicaoCarteira.Should().Be(100);
         }
     }
 }

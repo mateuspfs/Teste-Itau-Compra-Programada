@@ -62,7 +62,7 @@ namespace Itau.CompraProgramada.Tests.Unit.Application
             var response = await _service.AderirAoProdutoAsync(request);
 
             // Assert
-            response.Nome.Should().Be("Teste");
+            response.Data.Nome.Should().Be("Teste");
             _clienteRepoMock.Verify(x => x.AddAsync(It.IsAny<Cliente>()), Times.Once);
             _contaRepoMock.Verify(x => x.AddAsync(It.Is<ContaGrafica>(c => c.Tipo == ContaTipo.FILHOTE)), Times.Once);
         }
@@ -74,11 +74,11 @@ namespace Itau.CompraProgramada.Tests.Unit.Application
             var request = new AdesaoClienteRequest { CPF = "123" };
 
             // Act
-            var act = async () => await _service.AderirAoProdutoAsync(request);
-
+            var result = await _service.AderirAoProdutoAsync(request);
+ 
             // Assert
-            await act.Should().ThrowAsync<Itau.CompraProgramada.Application.Exceptions.ValidationException>()
-                     .WithMessage("*CPF informado é inválido*");
+            result.IsSuccess.Should().BeFalse();
+            result.ErrorMessage.Should().Contain("CPF informado é inválido");
         }
 
         [Fact]
@@ -88,11 +88,11 @@ namespace Itau.CompraProgramada.Tests.Unit.Application
             var request = new AdesaoClienteRequest { CPF = "52998224725", ValorMensal = 50 };
 
             // Act
-            var act = async () => await _service.AderirAoProdutoAsync(request);
-
+            var result = await _service.AderirAoProdutoAsync(request);
+ 
             // Assert
-            await act.Should().ThrowAsync<Itau.CompraProgramada.Application.Exceptions.ValidationException>()
-                     .WithMessage("*valor mensal minímo*");
+            result.IsSuccess.Should().BeFalse();
+            result.ErrorMessage.Should().Contain("valor mensal minímo");
         }
 
         [Fact]
@@ -104,11 +104,11 @@ namespace Itau.CompraProgramada.Tests.Unit.Application
                             .ReturnsAsync(new Cliente("Existing", "52998224725", "e@e.com", 300));
 
             // Act
-            var act = async () => await _service.AderirAoProdutoAsync(request);
-
+            var result = await _service.AderirAoProdutoAsync(request);
+ 
             // Assert
-            await act.Should().ThrowAsync<Itau.CompraProgramada.Application.Exceptions.ValidationException>()
-                     .WithMessage("*CPF já cadastrado*");
+            result.IsSuccess.Should().BeFalse();
+            result.ErrorMessage.Should().Contain("CPF já cadastrado");
         }
 
         [Fact]
@@ -118,10 +118,11 @@ namespace Itau.CompraProgramada.Tests.Unit.Application
             _clienteRepoMock.Setup(x => x.GetByIdAsync(1)).ReturnsAsync((Cliente)null);
 
             // Act
-            var act = async () => await _service.SairDoProdutoAsync(1);
-
+            var result = await _service.SairDoProdutoAsync(1);
+ 
             // Assert
-            await act.Should().ThrowAsync<Itau.CompraProgramada.Application.Exceptions.NotFoundException>();
+            result.IsSuccess.Should().BeFalse();
+            result.StatusCode.Should().Be(System.Net.HttpStatusCode.NotFound);
         }
 
         [Fact]
@@ -133,11 +134,11 @@ namespace Itau.CompraProgramada.Tests.Unit.Application
             _clienteRepoMock.Setup(x => x.GetByIdAsync(1)).ReturnsAsync(cliente);
 
             // Act
-            var act = async () => await _service.SairDoProdutoAsync(1);
-
+            var result = await _service.SairDoProdutoAsync(1);
+ 
             // Assert
-            await act.Should().ThrowAsync<Itau.CompraProgramada.Application.Exceptions.ValidationException>()
-                     .WithMessage("*já havia saído do produto*");
+            result.IsSuccess.Should().BeFalse();
+            result.ErrorMessage.Should().Contain("já havia saído do produto");
         }
 
         [Fact]
@@ -149,11 +150,11 @@ namespace Itau.CompraProgramada.Tests.Unit.Application
             _contaRepoMock.Setup(x => x.GetAllAsync()).ReturnsAsync(new List<ContaGrafica>());
 
             // Act
-            var act = async () => await _service.ObterRentabilidadeAsync(1);
-
+            var result = await _service.ObterRentabilidadeAsync(1);
+ 
             // Assert
-            await act.Should().ThrowAsync<Itau.CompraProgramada.Application.Exceptions.NotFoundException>()
-                     .WithMessage("*Conta gráfica não encontrada*");
+            result.IsSuccess.Should().BeFalse();
+            result.StatusCode.Should().Be(System.Net.HttpStatusCode.NotFound);
         }
 
         [Fact]
@@ -171,8 +172,8 @@ namespace Itau.CompraProgramada.Tests.Unit.Application
             var response = await _service.ObterRentabilidadeAsync(1);
 
             // Assert
-            response.Rentabilidade.RentabilidadePercentual.Should().Be(0);
-            response.Rentabilidade.ValorTotalInvestido.Should().Be(0);
+            response.Data.Rentabilidade.RentabilidadePercentual.Should().Be(0);
+            response.Data.Rentabilidade.ValorTotalInvestido.Should().Be(0);
         }
     }
 }
