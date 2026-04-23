@@ -81,19 +81,33 @@ jobs:
           source: "docker-compose.prod.yml"
           target: "~/"
 
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Get ECR Password
+        id: ecr_pass
+        run: echo "password=$(aws ecr get-login-password --region ${{ secrets.AWS_REGION }})" >> $GITHUB_OUTPUT
+
       - name: Execute remote commands via SSH
         uses: appleboy/ssh-action@v1.0.3
+        env:
+          ECR_PASSWORD: ${{ steps.ecr_pass.outputs.password }}
+          AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+          DB_HOST: ${{ secrets.DB_HOST }}
+          DB_NAME: ${{ secrets.DB_NAME }}
+          DB_USER: ${{ secrets.DB_USER }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
+          envs: ECR_PASSWORD,AWS_ACCOUNT_ID,AWS_REGION,DB_HOST,DB_NAME,DB_USER,DB_PASSWORD
           script: |
-            aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
-            export AWS_ACCOUNT_ID=${{ secrets.AWS_ACCOUNT_ID }}
-            export AWS_REGION=${{ secrets.AWS_REGION }}
-            export DB_HOST=${{ secrets.DB_HOST }}
-            export DB_NAME=${{ secrets.DB_NAME }}
-            export DB_USER=${{ secrets.DB_USER }}
-            export DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+            echo $ECR_PASSWORD | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
             docker compose -f ~/docker-compose.prod.yml pull
             docker compose -f ~/docker-compose.prod.yml up -d
