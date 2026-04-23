@@ -95,5 +95,5 @@ jobs:
             export DB_NAME=${{ secrets.DB_NAME }}
             export DB_USER=${{ secrets.DB_USER }}
             export DB_PASSWORD=${{ secrets.DB_PASSWORD }}
-            docker-compose -f ~/docker-compose.prod.yml pull
-            docker-compose -f ~/docker-compose.prod.yml up -d
+            docker compose -f ~/docker-compose.prod.yml pull
+            docker compose -f ~/docker-compose.prod.yml up -d
