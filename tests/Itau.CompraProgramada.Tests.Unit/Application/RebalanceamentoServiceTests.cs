@@ -1,13 +1,14 @@
-using Moq;
-using FluentAssertions;
-using Xunit;
-using Itau.CompraProgramada.Application.Services;
+using System.Linq.Expressions;
 using Itau.CompraProgramada.Domain.Interfaces.Respositories;
 using Itau.CompraProgramada.Domain.Entities;
 using Itau.CompraProgramada.Domain.Enums;
 using Itau.CompraProgramada.Application.Interfaces;
 using Itau.CompraProgramada.Tests.Unit.Helpers;
 using Itau.CompraProgramada.Domain.Utils;
+using Moq;
+using FluentAssertions;
+using Xunit;
+using Itau.CompraProgramada.Application.Services;
 
 namespace Itau.CompraProgramada.Tests.Unit.Application
 {
@@ -88,6 +89,8 @@ namespace Itau.CompraProgramada.Tests.Unit.Application
 
             _clienteRepoMock.Setup(r => r.GetAtivosAsync()).ReturnsAsync(new List<Cliente> { cliente });
             _contaRepoMock.Setup(r => r.GetAllAsync()).ReturnsAsync(new List<ContaGrafica> { conta });
+            _contaRepoMock.Setup(r => r.FirstOrDefaultAsync(It.IsAny<Expression<Func<ContaGrafica, bool>>>()))
+                          .ReturnsAsync(conta);
             _custodiaRepoMock.Setup(r => r.GetByContaGraficaIdAsync(10)).ReturnsAsync(new List<Custodia> { custodiaAntiga });
             _itemCestaRepoMock.Setup(r => r.GetByCestaIdAsync(2)).ReturnsAsync(new List<ItemCesta> { itemNovo });
 
@@ -122,6 +125,8 @@ namespace Itau.CompraProgramada.Tests.Unit.Application
 
             _clienteRepoMock.Setup(r => r.GetAtivosAsync()).ReturnsAsync(new List<Cliente> { cliente });
             _contaRepoMock.Setup(r => r.GetAllAsync()).ReturnsAsync(new List<ContaGrafica> { conta });
+            _contaRepoMock.Setup(r => r.FirstOrDefaultAsync(It.IsAny<Expression<Func<ContaGrafica, bool>>>()))
+                          .ReturnsAsync(conta);
             _custodiaRepoMock.Setup(r => r.GetByContaGraficaIdAsync(10)).ReturnsAsync(new List<Custodia> { custodia });
             _itemCestaRepoMock.Setup(r => r.GetByCestaIdAsync(2)).ReturnsAsync(new List<ItemCesta> { itemNovo });
             
@@ -149,6 +154,8 @@ namespace Itau.CompraProgramada.Tests.Unit.Application
 
             _clienteRepoMock.Setup(r => r.GetAtivosAsync()).ReturnsAsync(new List<Cliente> { cliente });
             _contaRepoMock.Setup(r => r.GetAllAsync()).ReturnsAsync(new List<ContaGrafica> { conta });
+            _contaRepoMock.Setup(r => r.FirstOrDefaultAsync(It.IsAny<Expression<Func<ContaGrafica, bool>>>()))
+                          .ReturnsAsync(conta);
             _custodiaRepoMock.Setup(r => r.GetByContaGraficaIdAsync(10)).ReturnsAsync(new List<Custodia> { custodia });
             _itemCestaRepoMock.Setup(r => r.GetByCestaIdAsync(2)).ReturnsAsync(new List<ItemCesta> { itemNovo });
             

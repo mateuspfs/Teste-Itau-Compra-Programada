@@ -49,11 +49,11 @@ namespace Itau.CompraProgramada.Tests.Unit.Application
             };
 
             // Act
-            var act = async () => await _service.CadastrarAlterarCestaAsync(request);
-
+            var result = await _service.CadastrarAlterarCestaAsync(request);
+ 
             // Assert
-            await act.Should().ThrowAsync<Itau.CompraProgramada.Application.Exceptions.ValidationException>()
-                     .WithMessage("*exatamente 5 ativos*");
+            result.IsSuccess.Should().BeFalse();
+            result.ErrorMessage.Should().Contain("deve conter exatamente 5 ativos");
         }
 
         [Fact]
@@ -80,7 +80,7 @@ namespace Itau.CompraProgramada.Tests.Unit.Application
             var response = await _service.CadastrarAlterarCestaAsync(request);
 
             // Assert
-            response.Nome.Should().Be("Cesta Certa");
+            response.Data.Nome.Should().Be("Cesta Certa");
             _cestaRepoMock.Verify(x => x.AddAsync(It.IsAny<CestaRecomendacao>()), Times.Once);
             _itemRepoMock.Verify(x => x.AddRangeAsync(It.Is<IEnumerable<ItemCesta>>(i => i.Count() == 5)), Times.Once);
         }
@@ -103,11 +103,11 @@ namespace Itau.CompraProgramada.Tests.Unit.Application
             };
 
             // Act
-            var act = async () => await _service.CadastrarAlterarCestaAsync(request);
+            var result = await _service.CadastrarAlterarCestaAsync(request);
 
             // Assert
-            await act.Should().ThrowAsync<Itau.CompraProgramada.Application.Exceptions.ValidationException>()
-                     .WithMessage("*soma dos percentuais deve ser exatamente 100%*");
+            result.IsSuccess.Should().BeFalse();
+            result.ErrorMessage.Should().Contain("100%");
         }
 
         [Fact]
@@ -128,11 +128,11 @@ namespace Itau.CompraProgramada.Tests.Unit.Application
             };
 
             // Act
-            var act = async () => await _service.CadastrarAlterarCestaAsync(request);
-
+            var result = await _service.CadastrarAlterarCestaAsync(request);
+ 
             // Assert
-            await act.Should().ThrowAsync<Itau.CompraProgramada.Application.Exceptions.ValidationException>()
-                     .WithMessage("*percentual maior que 0%*");
+            result.IsSuccess.Should().BeFalse();
+            result.ErrorMessage.Should().Contain("maior que 0%");
         }
 
         [Fact]
@@ -161,7 +161,7 @@ namespace Itau.CompraProgramada.Tests.Unit.Application
             var response = await _service.CadastrarAlterarCestaAsync(request);
 
             // Assert
-            response.RebalanceamentoDisparado.Should().BeTrue();
+            response.Data.RebalanceamentoDisparado.Should().BeTrue();
             _rebalServiceMock.Verify(x => x.ProcessarRebalanceamentoPorMudancaCestaAsync(10, It.IsAny<long>()), Times.Once);
         }
 
@@ -173,10 +173,11 @@ namespace Itau.CompraProgramada.Tests.Unit.Application
                           .ReturnsAsync((CestaRecomendacao)null);
 
             // Act
-            var act = async () => await _service.ObterCestaAtualAsync();
-
+            var result = await _service.ObterCestaAtualAsync();
+ 
             // Assert
-            await act.Should().ThrowAsync<Itau.CompraProgramada.Application.Exceptions.NotFoundException>();
+            result.IsSuccess.Should().BeFalse();
+            result.StatusCode.Should().Be(System.Net.HttpStatusCode.NotFound);
         }
 
         [Fact]
@@ -186,11 +187,11 @@ namespace Itau.CompraProgramada.Tests.Unit.Application
             _contaRepoMock.Setup(x => x.GetAllAsync()).ReturnsAsync(new List<ContaGrafica>());
 
             // Act
-            var act = async () => await _service.ObterCustodiaMasterAsync();
-
+            var result = await _service.ObterCustodiaMasterAsync();
+ 
             // Assert
-            await act.Should().ThrowAsync<Itau.CompraProgramada.Application.Exceptions.NotFoundException>()
-                     .WithMessage("*Conta Master não encontrada*");
+            result.IsSuccess.Should().BeFalse();
+            result.StatusCode.Should().Be(System.Net.HttpStatusCode.NotFound);
         }
 
         [Fact]
@@ -214,9 +215,9 @@ namespace Itau.CompraProgramada.Tests.Unit.Application
             var response = await _service.ObterCustodiaMasterAsync();
 
             // Assert
-            response.Custodia.Should().HaveCount(1);
-            response.Custodia[0].Ticker.Should().Be("PETR4");
-            response.ValorTotalResiduo.Should().Be(160m); // 5 * 32
+            response.Data.Custodia.Should().HaveCount(1);
+            response.Data.Custodia[0].Ticker.Should().Be("PETR4");
+            response.Data.ValorTotalResiduo.Should().Be(160m); // 5 * 32
         }
     }
 }

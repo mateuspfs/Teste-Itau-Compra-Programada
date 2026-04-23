@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { clientesApi, adminApi } from '../../services/api';
-import type { ClienteDto, CustodiaMasterDto } from '../../types/api';
+import { clientesApi } from '../../services/api';
+import type { ClienteResumoDto } from '../../types/api';
 import { formatarMoeda } from '../../helpers/masks';
 import {
   Container,
@@ -19,7 +19,7 @@ import {
 export default function Dashboard() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
-  const [clientes, setClientes] = useState<ClienteDto[]>([]);
+  const [clientes, setClientes] = useState<ClienteResumoDto['ultimosClientes']>([]);
   const [stats, setStats] = useState({ totalAtivos: 0, totalValorMensal: 0, totalResiduoMaster: 0 });
   const [itensMaster, setItensMaster] = useState<{ ticker: string; valorAtual: number }[]>([]);
 
