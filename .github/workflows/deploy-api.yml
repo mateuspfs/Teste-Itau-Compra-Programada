@@ -109,5 +109,5 @@ jobs:
           envs: ECR_PASSWORD,AWS_ACCOUNT_ID,AWS_REGION,DB_HOST,DB_NAME,DB_USER,DB_PASSWORD
           script: |
             echo $ECR_PASSWORD | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
-            docker compose -f ~/docker-compose.prod.yml pull
-            docker compose -f ~/docker-compose.prod.yml up -d
+            docker-compose -f ~/docker-compose.prod.yml pull
+            docker-compose -f ~/docker-compose.prod.yml up -d
