@@ -47,7 +47,7 @@ Eu desenvolvi estes testes para validar a comunicação entre o software e os co
 Para garantir escalabilidade, segurança e entregas ágeis, o projeto foi modernizado utilizando práticas padrão de mercado para nuvem:
 
 - **Infraestrutura como Código (IaC)**: Utilizei o **Terraform** para projetar e automatizar o provisionamento de toda a infraestrutura na AWS (VPC, EC2, RDS, S3). Isso garante que o ambiente seja 100% reprodutível e seguro. **[Veja os detalhes e como provisionar a nuvem no README de Infraestrutura](infra/README.md).**
-- **Integração e Entrega Contínuas (CI/CD)**: Criei esteiras no **GitHub Actions** com workflows distintos para o Frontend e para a API. As pipelines garantem que todos os testes sejam validados antes do processo automatizado de build, criação de imagens Docker e deploy contínuo em produção. **[Veja como as automações funcionam no README de CI/CD](.github/README.md).**
+- **Integração e Entrega Contínuas (CI/CD)**: Criei esteiras no **GitHub Actions** com workflows distintos para o Frontend e para a API. As pipelines garantem que todos os testes sejam validados antes do processo automatizado de build, criação de imagens Docker e deploy contínuo em produção. **[Veja como as automações funcionam na documentação de CI/CD](.github/CI_CD.md).**
 
 ## Como Executar
 
