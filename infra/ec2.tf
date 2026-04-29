@@ -1,6 +1,22 @@
+# Busca a imagem mais recente do Ubuntu 22.04 LTS
+data "aws_ami" "ubuntu" {
+  most_recent = true
+  owners      = ["099720109477"] # ID da Canonical
+
+  filter {
+    name   = "name"
+    values = ["ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-amd64-server-*"]
+  }
+
+  filter {
+    name   = "virtualization-type"
+    values = ["hvm"]
+  }
+}
+
 resource "aws_instance" "api_server" {
-  # Ubuntu 22.04 LTS em Ohio
-  ami           = "ami-0c55b159cbfafe1f0"
+  # Usa a AMI do Ubuntu 22.04 encontrada acima
+  ami           = data.aws_ami.ubuntu.id
   instance_type = "t3.micro"
   
   subnet_id                   = aws_subnet.public_subnet.id
@@ -14,11 +30,24 @@ resource "aws_instance" "api_server" {
     Name = "itau-api-server"
   }
 
-  # Script de inicialização: Instala Docker e configura permissões no boot
+  # Script de inicialização: Instala Docker, Compose e Agente de Conexão
   user_data = <<-EOF
               #!/bin/bash
               sudo apt-get update
-              sudo apt-get install -y docker.io
+              sudo apt-get install -y ca-certificates curl gnupg ec2-instance-connect
+              
+              # Adicionar chave oficial do Docker
+              sudo install -m 0755 -d /etc/apt/keyrings
+              curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+              sudo chmod a+r /etc/apt/keyrings/docker.gpg
+
+              # Adicionar repositório do Docker
+              echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+              
+              sudo apt-get update
+              sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+              sudo ln -s /usr/libexec/docker/cli-plugins/docker-compose /usr/local/bin/docker-compose
+
               sudo systemctl start docker
               sudo systemctl enable docker
               sudo usermod -aG docker ubuntu

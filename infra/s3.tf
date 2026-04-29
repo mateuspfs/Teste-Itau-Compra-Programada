@@ -1,6 +1,9 @@
 resource "aws_s3_bucket" "frontend" {
   # Nome do bucket deve ser único globalmente
   bucket = "itau-compra-programada-frontend-unique-id-123"
+  
+  # Permite que o terraform destroy apague o bucket mesmo com arquivos dentro
+  force_destroy = true
 
   tags = {
     Name = "itau-frontend-bucket"
