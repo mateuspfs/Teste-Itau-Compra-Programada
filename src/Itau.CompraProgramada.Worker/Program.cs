@@ -12,6 +12,7 @@ builder.Services.AddApplication();
 builder.Services.AddScoped<ICotacaoProcessor, CotacaoProcessor>();
 builder.Services.AddScoped<IMotorCompraEngine, MotorCompraEngine>();
 
+builder.Services.AddSingleton<SqsConsumerService>();
 builder.Services.AddHostedService<Worker>();
 
 var host = builder.Build();

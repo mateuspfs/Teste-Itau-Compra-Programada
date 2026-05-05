@@ -1,0 +1,3 @@
+# A biblioteca boto3 já vem embutida na maior parte dos runtimes do AWS Lambda,
+# porém é uma boa prática declará-la aqui para rodar testes localmente ou em CI/CD.
+boto3==1.34.*

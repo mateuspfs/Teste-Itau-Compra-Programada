@@ -37,7 +37,7 @@ Eu desenvolvi estes testes para validar a comunicação entre o software e os co
 ## Decisões Técnicas
 
 - **Automação Tributária (RN-055)**: Configurei o disparo imediato de eventos de IR (Dedo-Duro) para o Kafka em todas as operações de venda durante o rebalanceamento.
-- **Ingestão Diária de Cotações**: Implementei uma rotina no Worker que busca arquivos no formato `COTAHIST_D<DDMMYYYY>.TXT`. Isso simula uma integração real onde a corretora recebe arquivos diários da B3 para atualizar sua base de preços e disparar o motor de investimento.
+- **Ingestão Diária de Cotações (Serverless Data Pipeline)**: Arquitetura modernizada para Orientação a Eventos. Arquivos `COTAHIST.TXT` da B3 são depositados em um Bucket **Amazon S3**, que engatilha instantaneamente uma função **AWS Lambda (Python)**. A Lambda realiza a limpeza posicional do texto e agrupa lotes de 500 cotações (Batching), publicando-os em uma fila **Amazon SQS**. O Worker do `.NET` atua como consumidor (Long Polling) e insere lotes inteiros usando EF Core `AddRangeAsync`, garantindo segurança contra sobrecarga no Banco de Dados.
 - **Cálculo de Lucro Real (RN-060)**: Eu implementei um mecanismo que rastreia o lucro real em cada operação de venda. Diferente de uma abordagem baseada em estimativas, eu capturo a diferença exata entre o preço de venda e o preço médio, garantindo precisão total no cálculo do imposto de renda mensal enviado ao Kafka.
 
 - **Gestão de Custódia Master (RN-030)**: Eu projetei o sistema para lidar com o resíduo de quantidades fracionárias decorrentes da distribuição proporcional entre clientes. Esse saldo residual é mantido na Conta Master e utilizado automaticamente nas operações futuras, otimizando o uso de capital.

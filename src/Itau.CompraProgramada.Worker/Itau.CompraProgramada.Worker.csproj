@@ -9,6 +9,7 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.2" />
+    <PackageReference Include="AWSSDK.SQS" Version="3.7.300.*" />
   </ItemGroup>
 
   <ItemGroup>
